@@ -2,60 +2,51 @@
 
 ## Qué corre y cuándo
 
-| Workflow                  | Cuándo                                                        | Qué hace                                           |
-| ------------------------- | ------------------------------------------------------------- | -------------------------------------------------- |
-| `ci.yml`                  | PR a feedback / staging / main                                | lint, prettier, tipos, tests, build                |
-| `validate-migrations.yml` | PR a feedback / staging / main que toca `supabase/migrations` | DB local limpia + todas las migraciones (sin seed) |
-| `deploy-main.yml`         | push a `main` que toca `supabase/migrations`                  | `db push` al proyecto de Supabase de producción    |
+| Workflow      | Cuándo                         | Qué hace                                                 |
+| ------------- | ------------------------------ | -------------------------------------------------------- |
+| `ci.yml`      | PR a feedback / staging / main | lint, prettier, tipos, tests, build + cargo check/clippy |
+| `release.yml` | push a `main` (merge de un PR) | reusa `ci.yml` → si la versión es nueva, publica         |
 
-Flujo: rama → PR → CI + migraciones en local pasan → merge → al llegar a `main`, las migraciones suben solas a producción.
+Hooks locales:
 
-`feedback` y `staging` no migran automáticamente.
+- `pre-commit` → `lint-staged` (eslint + prettier en lo cambiado).
+- `pre-push` → bloquea push directo a `main`, `staging`, `feedback`.
 
-## Paso a paso (una vez por repo)
+## Publicar una versión
 
-### 1. Ramas
+1. En el PR, subir `version` en `src-tauri/tauri.conf.json` (manda esta).
+   - Mantener igual `package.json` y `src-tauri/Cargo.toml`.
+2. Mergear a `main`.
+3. `release.yml`:
+   - Si el tag `v<versión>` ya existe → termina sin publicar.
+   - Crea un Release borrador.
+   - Compila macOS (universal) y Windows (x64) en paralelo.
+   - Sube `Lucka-macos.dmg` y `Lucka-windows-setup.exe` (nombres fijos).
+   - Publica el Release. Las apps instaladas lo ven vía `latest.json`.
 
-```bash
-git checkout -b feedback && git push -u origin feedback
-git checkout -b staging && git push -u origin staging
-```
+Merge sin subir versión → solo validaciones.
 
-`main` ya existe. Hacer `feedback` la rama por defecto si el equipo trabaja ahí.
+## Secrets (ya creados)
 
-### 2. Token de Supabase
+| Secret                               | Qué es                                           |
+| ------------------------------------ | ------------------------------------------------ |
+| `TAURI_SIGNING_PRIVATE_KEY`          | Llave privada del updater (`~/.tauri/lucka.key`) |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Su contraseña                                    |
 
-- supabase.com → Account → Access Tokens → **Generate new token**.
-- Uno solo sirve para todos los proyectos de la cuenta.
+- La llave firma los updates. La app solo instala lo firmado con ella.
+- No es firma Apple/Windows: no quita avisos de seguridad.
+- Si se pierde, las apps instaladas no pueden actualizarse solas. Guardar copia.
 
-### 3. Secrets en GitHub
-
-Repo → Settings → Secrets and variables → Actions → **New repository secret**:
-
-| Secret                      | De dónde sale                                            |
-| --------------------------- | -------------------------------------------------------- |
-| `SUPABASE_ACCESS_TOKEN`     | Paso 2                                                   |
-| `SUPABASE_MAIN_PROJECT_REF` | Proyecto de producción → Settings → General → Project ID |
-
-### 4. Proteger ramas
+## Proteger ramas
 
 Repo → Settings → Branches (o Rules) → regla para `main`, `staging`, `feedback`:
 
 - ✅ Require a pull request before merging
-- ✅ Require status checks to pass → marcar `check`
+- ✅ Require status checks to pass → marcar `check` y `rust`
 - ✅ Do not allow bypassing the above settings
-
-No marcar `validate-migrations` como obligatorio: solo corre si el PR toca migraciones, y en los demás PRs GitHub se queda esperándolo para siempre.
-
-### 5. Probar
-
-1. Rama nueva → `pnpm db:new prueba` → escribir un `create table`.
-2. `pnpm db:reset` local → pasa.
-3. PR a `feedback` → deben correr `CI` y `Validate Supabase migrations (local)`.
-4. Llevar el cambio a `main` → corre `Run migrations on main` → la tabla aparece en el proyecto de producción.
 
 ## Si algo falla
 
-- **Validate falla:** la migración tiene error de SQL. Corre `pnpm db:reset` local y lee el error.
-- **Run migrations on main falla en link:** revisar `SUPABASE_MAIN_PROJECT_REF` y `SUPABASE_ACCESS_TOKEN`.
-- **Run migrations on main falla en push:** hay una migración en remoto que no está en el repo (`supabase migration list`).
+- **`rust` falla en CI:** correr `pnpm cargo:check` y `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`.
+- **Build falla por firma:** revisar los dos secrets.
+- **Quedó un borrador a medias:** re-correr los jobs fallidos del mismo run. Si no, borrar el borrador y re-correr todo.
