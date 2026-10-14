@@ -1,0 +1,8 @@
+node_modules/
+pnpm-lock.yaml
+.next/
+coverage/
+public/
+.env*
+src-tauri/target/
+src-tauri/gen/

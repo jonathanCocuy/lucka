@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Mismo diseño que src/app/icon.tsx, a 1024px. Colores de BRAND_COLORS. -->
+  <rect width="1024" height="1024" rx="128" fill="#7a1838"/>
+  <rect x="368" y="224" width="96" height="576" fill="#f3eee5"/>
+  <rect x="368" y="736" width="352" height="64" fill="#f3eee5"/>
+</svg>
