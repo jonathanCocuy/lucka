@@ -6,7 +6,7 @@ const TODAY = new Date(2026, 8, 20)
 
 function data(incomes: Omit<Income, 'id'>[]): FinanceData {
   return {
-    profile: { monthlyIncome: 1_000_000, payday: 15 },
+    profile: { name: 'Ana', monthlyIncome: 1_000_000, payday: 15 },
     fixed: [],
     categories: [],
     investment: {

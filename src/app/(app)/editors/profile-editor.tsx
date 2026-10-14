@@ -3,6 +3,7 @@
 import field from '@/components/ui/field.module.css'
 import { MoneyInput } from '@/components/ui/money-input'
 import type { FinanceProfile } from '@/lib/finance/types'
+import { NAME_MAX } from '@/lib/finance/validate'
 import styles from './editor.module.css'
 
 interface ProfileEditorProps {
@@ -13,10 +14,20 @@ interface ProfileEditorProps {
 export function ProfileEditor({ value, onChange }: ProfileEditorProps) {
   return (
     <div className={styles.stack}>
+      <label className={field.field}>
+        <span className={field.label}>¿Cómo te llamas?</span>
+        <input
+          className={field.input}
+          autoFocus
+          maxLength={NAME_MAX}
+          autoComplete="given-name"
+          value={value.name}
+          onChange={e => onChange({ ...value, name: e.target.value })}
+        />
+      </label>
       <MoneyInput
         label="Ingreso mensual neto"
         size="lg"
-        autoFocus
         value={value.monthlyIncome}
         onChange={monthlyIncome => onChange({ ...value, monthlyIncome })}
       />

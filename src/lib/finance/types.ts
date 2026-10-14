@@ -1,4 +1,6 @@
 export interface FinanceProfile {
+  // Sin cuenta: el nombre solo sirve para saludar.
+  name: string
   monthlyIncome: number
   // Día del mes en que llega el pago. El ciclo va de pago a pago.
   payday: number

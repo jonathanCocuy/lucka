@@ -14,6 +14,8 @@ type Result<T> = { ok: true; value: T } | { ok: false; error: string }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
+export const NAME_MAX = 40
+
 const ok = <T>(value: T): Result<T> => ({ ok: true, value })
 const fail = <T>(error: string): Result<T> => ({ ok: false, error })
 
@@ -35,11 +37,16 @@ export function validateId(input: unknown): Result<string> {
 
 export function validateProfile(input: unknown): Result<FinanceProfile> {
   if (!isObject(input)) return fail('Datos inválidos')
+  const name = typeof input.name === 'string' ? input.name.trim() : ''
+  if (!name) return fail('Escribe tu nombre')
+  if (name.length > NAME_MAX) {
+    return fail(`Tu nombre va hasta ${NAME_MAX} letras`)
+  }
   if (!isMoney(input.monthlyIncome, 1)) {
     return fail('El ingreso debe ser mayor a 0')
   }
   if (!isDay(input.payday)) return fail('El día de pago va de 1 a 31')
-  return ok({ monthlyIncome: input.monthlyIncome, payday: input.payday })
+  return ok({ name, monthlyIncome: input.monthlyIncome, payday: input.payday })
 }
 
 export function validateFixed(input: unknown): Result<FixedExpense[]> {

@@ -103,7 +103,9 @@ function EditForm({
         <Button
           type="submit"
           disabled={
-            saving || (edit === 'profile' && profile.monthlyIncome <= 0)
+            saving ||
+            (edit === 'profile' &&
+              (profile.monthlyIncome <= 0 || !profile.name.trim()))
           }
         >
           {saving ? 'Guardando…' : 'Guardar'}

@@ -25,9 +25,9 @@ type Open =
   | null
 
 export function Dashboard() {
-  const { summary } = useFinance()
+  const { data, summary } = useFinance()
   const [open, setOpen] = useState<Open>(null)
-  if (!summary) return null
+  if (!data || !summary) return null
 
   const close = () => setOpen(null)
   const { cycle } = summary
@@ -48,6 +48,7 @@ export function Dashboard() {
           </span>
         </p>
         <nav className={styles.nav}>
+          <span className={styles.user}>{data.profile.name}</span>
           <button
             type="button"
             onClick={() => setOpen({ kind: 'edit', edit: 'profile' })}

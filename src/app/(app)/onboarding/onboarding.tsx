@@ -58,7 +58,7 @@ export function Onboarding() {
   const [saving, startSaving] = useTransition()
   // Arranca con lo ya guardado: si recargas a mitad, retomas donde ibas.
   const [profile, setProfile] = useState<FinanceProfile>(
-    saved?.profile ?? { monthlyIncome: 0, payday: 30 },
+    saved?.profile ?? { name: '', monthlyIncome: 0, payday: 30 },
   )
   const [fixed, setFixed] = useState<FixedExpense[]>(saved?.fixed ?? [])
   const [categories, setCategories] = useState<Category[]>(
@@ -89,12 +89,15 @@ export function Onboarding() {
   }
   const current = STEPS[step]
   const isLast = step === STEPS.length - 1
-  const canContinue = step !== 0 || profile.monthlyIncome > 0
+  const canContinue =
+    step !== 0 || (profile.name.trim() !== '' && profile.monthlyIncome > 0)
 
   return (
     <main className={styles.page}>
       <aside className={styles.side}>
-        <p className={styles.issue}>Hola</p>
+        <p className={styles.issue}>
+          Hola{profile.name.trim() && `, ${profile.name.trim()}`}
+        </p>
         <p key={step} className={styles.number}>
           {String(step + 1).padStart(2, '0')}
         </p>
