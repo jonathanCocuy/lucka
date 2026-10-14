@@ -3,5 +3,4 @@ pnpm-lock.yaml
 .next/
 coverage/
 public/
-supabase/.temp/
 .env*

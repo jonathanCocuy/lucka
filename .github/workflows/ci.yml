@@ -11,10 +11,6 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    # Valores falsos: el build solo necesita que existan.
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
 
     steps:
       - name: ⬇️ Checkout
