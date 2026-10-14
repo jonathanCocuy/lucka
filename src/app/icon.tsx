@@ -3,6 +3,8 @@ import { BRAND_COLORS } from '@/lib/constants/colors'
 
 export const size = { width: 32, height: 32 }
 export const contentType = 'image/png'
+// El export estático lo genera en el build.
+export const dynamic = 'force-static'
 
 // "L" dibujada con dos trazos: ImageResponse no trae Bodoni sin cargar la fuente.
 export default function Icon() {
