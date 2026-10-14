@@ -9,7 +9,9 @@
 ## Impacto
 
 - [ ] Migración de DB
-- [ ] Cambia auth / roles
+- [ ] Cambia el formato del respaldo
+- [ ] Pide permisos nuevos de Tauri
+- [ ] Sube versión (publica Release)
 - [ ] Rompe algo existente
 
 ## Checklist

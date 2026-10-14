@@ -65,7 +65,7 @@ Todo plan sigue este formato. Nada más.
 Reglas:
 
 - **Siempre preguntar antes de decidir** en temas de:
-  - Arquitectura (dónde vive la lógica, tabla nueva vs columna, server action vs route handler).
+  - Arquitectura (dónde vive la lógica, tabla nueva vs columna, SQL en `local-db` vs comando Rust).
   - Negocio (quién puede hacer qué, qué pasa en el caso raro, qué ve el usuario si falla).
 - Cada pregunta trae 2-4 opciones con una línea de pro/contra. Marcar la recomendada.
 - Usar la herramienta de preguntas (AskUserQuestion) cuando exista.
@@ -83,7 +83,7 @@ Reglas:
 - No escribir tests para:
   - Casos que no pueden pasar (tipos ya lo impiden, input ya validado antes).
   - Código sin lógica (componentes que solo pintan, wrappers, constantes).
-  - Librerías externas (Supabase, Next, jose).
+  - Librerías externas (Tauri, Next).
 - Un test = un comportamiento. Nombre en español que diga qué se espera.
 
 Guía completa: `docs/testing.md`. Agente: `test-planner`.
@@ -92,42 +92,30 @@ Guía completa: `docs/testing.md`. Agente: `test-planner`.
 
 ## 4. Stack y estructura
 
-- Next.js 16 (App Router, `src/`), React 19, TypeScript estricto, **pnpm**.
-- Supabase: Auth + Postgres. Migraciones en `supabase/migrations/`.
+- App de escritorio local-first: **Tauri v2** (macOS + Windows).
+- UI: Next.js 16 como sitio estático (`output: 'export'` → `out/`), React 19, TypeScript estricto, **pnpm**.
+- Datos: SQLite local vía `tauri-plugin-sql`. Sin servidor, sin login, sin nube.
 - Estructura:
   - `src/app/` → rutas. Componentes de un solo uso viven junto a su ruta.
   - `src/components/ui/` → componentes reusados en toda la app.
-  - `src/app/api/<recurso>/route.ts` → endpoints. Solo HTTP: `authed` + parse + service.
-  - `src/lib/api/<recurso>/` → backend por recurso:
-    - `schema.ts` → forma del input (400). Tipos que comparten front y back.
-    - `service.ts` → reglas de negocio (404/409/422).
-    - `repo.ts` → Supabase. Único lugar que toca la DB.
-  - `src/lib/api-client/` → único lugar del front que llama a `/api`. Cifra al enviar, descifra al recibir.
-  - `src/lib/integrations/` → servicios externos (ej. OpenAI). Los llaman los services.
-  - `src/lib/` → resto de lógica compartida (auth, vault, finance, env).
+  - `src/lib/local-db/` → un archivo por recurso. **Único lugar con SQL.**
+  - `src/lib/api-client/` → lo que llama el front. Reglas de negocio + errores (`ApiClientError`).
+  - `src/lib/finance/` → tipos, validación y cálculos puros.
+  - `src-tauri/` → shell Rust, plugins, permisos (`capabilities/`) y migraciones.
 - Archivos en **kebab-case** (`mi-componente.tsx`). Lint lo bloquea.
 - Sin barrels (`index.ts` que solo re-exporta).
 
 ---
 
-## 5. Auth y guards
+## 5. Datos y permisos
 
-Flujo: login → token de Supabase en cookie httpOnly → vence en 2h → login otra vez. Sin refresh.
-Datos cifrados en el navegador (E2E). El servidor nunca ve datos en claro ni la contraseña real.
-Detalle: `docs/auth.md`, `docs/encryption.md`.
+- Sin auth ni roles: un usuario por computador.
+- Datos en claro en el archivo SQLite del usuario. Nunca salen del equipo.
+- Nada de servidor: sin `cookies()`, `headers()`, route handlers ni server actions. Rompen el export.
+- Cada API de Tauri nueva necesita su permiso en `src-tauri/capabilities/default.json`. Pedir lo mínimo.
+- CSP estricta en `tauri.conf.json`. No abrir dominios externos.
 
-Usar siempre los guards de `src/lib/auth/guards.ts`. No crear lógica de permisos propia.
-
-| Dónde    | Cómo                                                        |
-| -------- | ----------------------------------------------------------- |
-| Endpoint | `export const GET = authed(async ({ user, db }, req) => …)` |
-| Página   | `const user = await requireUser()`                          |
-
-- `proxy.ts` solo redirige rápido. **No es seguridad.** La seguridad está en los guards.
-- Sin roles ni admin. Cada usuario solo lee y escribe lo suyo (RLS).
-- Sin server actions: el front habla con el backend por `/api` (`src/lib/api-client/`).
-- Columnas sensibles (montos, nombres, descripciones) van cifradas: tipo `sealed` en la DB. Nunca en claro.
-- Nunca exponer `SUPABASE_SERVICE_ROLE_KEY` al cliente.
+Detalle: `docs/data.md`.
 
 ---
 
@@ -144,11 +132,10 @@ Detalle: `docs/css.md`.
 
 ## 7. Base de datos
 
-- Cambios de DB = migración nueva: `pnpm db:new nombre-corto`.
-- Nunca editar una migración ya mergeada. Se crea otra.
-- Probar local: `pnpm db:reset` antes de abrir el PR.
-- Después de migrar: `pnpm db:types` para regenerar tipos.
-- Toda tabla nueva con RLS activado.
+- Cambio de esquema = archivo nuevo en `src-tauri/migrations/` (`0002_nombre.sql`) + registrarlo en `src-tauri/src/lib.rs` con la versión siguiente.
+- Nunca editar una migración ya mergeada. Ya corrió en equipos de usuarios.
+- Si cambia la forma de los datos, revisar export/import (`src/lib/local-db/backup.ts`) y subir `BACKUP_VERSION` si hace falta.
+- Probar con `pnpm desktop`: base nueva y base existente.
 
 ---
 
@@ -179,7 +166,7 @@ Los hooks de `.claude/hooks/` bloquean casi todo esto. Si un hook bloquea: **no 
 Una tarea NO está lista si falla algo de esto:
 
 ```bash
-pnpm check   # lint + prettier + tipos + tests + build
+pnpm check   # lint + prettier + tipos + tests + build + cargo check
 ```
 
 Al terminar, responder con este formato (corto):

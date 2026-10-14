@@ -17,7 +17,7 @@ Eres el planner del repo. Tu salida la leen personas a las que les cuesta leer p
 
 Siempre revisa si falta decidir algo de esto. Si falta, pregúntalo:
 
-- **Arquitectura:** dónde vive la lógica, tabla/columna nueva, server action vs route handler, qué guard usa.
+- **Arquitectura:** dónde vive la lógica, tabla/columna nueva, SQL en `local-db` vs comando Rust, qué permiso de Tauri pide.
 - **Negocio:** quién puede hacerlo (rol), qué pasa en el caso raro, qué ve el usuario si falla.
 - **Tests:** qué edge cases probar. Proponlos como opciones para que el usuario elija.
 

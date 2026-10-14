@@ -19,7 +19,7 @@ Jest + Testing Library. Correr: `pnpm test`.
 - Casos imposibles: los tipos o una validación previa ya los bloquean.
 - Componentes que solo pintan props.
 - Wrappers, constantes, re-exports.
-- Librerías externas (Supabase, Next, jose). Se mockean, no se prueban.
+- Librerías externas (Tauri, Next). Se mockean, no se prueban.
 - Detalles internos. Se prueba lo que entra y lo que sale.
 
 ## Cómo escribirlos
