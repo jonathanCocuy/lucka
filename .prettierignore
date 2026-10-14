@@ -4,3 +4,5 @@ pnpm-lock.yaml
 coverage/
 public/
 .env*
+src-tauri/target/
+src-tauri/gen/

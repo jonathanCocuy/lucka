@@ -21,6 +21,8 @@ export default defineConfig([
   globalIgnores([
     '.next/**',
     'out/**',
+    'src-tauri/target/**',
+    'src-tauri/gen/**',
     'build/**',
     'coverage/**',
     'public/**',
