@@ -1,24 +1,16 @@
 # Lucka
 
 Cuánto tengo disponible y en qué se me va el dinero.
-Basado en `next-supabase-template`.
+App de escritorio para macOS y Windows. Tus datos nunca salen de tu computador.
 
-## Estado
+<!-- Captura: docs/screenshot.png -->
 
-- Registro público en `/register`. Sin admin: cada usuario ve solo lo suyo.
-- Datos cifrados en el navegador (E2E). El servidor guarda solo texto cifrado. Ver `/privacy`.
-- Checklist del backend: `docs/backend-checklist.md`.
+## Descargar
 
-## Arrancar
+[juan-ramirez-dev.github.io/lucka-landing](https://juan-ramirez-dev.github.io/lucka-landing/)
 
-```bash
-pnpm install
-pnpm dev
-```
-
-`.env.local` necesita `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (ver `.env.example`).
-
-DB local: `pnpm db:start` → `pnpm db:reset`. Tests de RLS: `supabase test db`.
+- Sin firma de Apple/Windows: la primera vez el sistema avisa. La landing explica cómo abrirla.
+- Se actualiza sola al abrir.
 
 ## Cómo funciona
 
@@ -26,21 +18,45 @@ DB local: `pnpm db:start` → `pnpm db:reset`. Tests de RLS: `supabase test db`.
 - **Disponible** = ingreso − gastado − fijos pendientes.
 - Gasto → va a un fijo (lo marca pagado) o a una categoría (cuenta contra su presupuesto).
 - Aporte a inversiones = gasto fijo "Inversión".
+- Respaldo: Ajustes → Exportar / Importar (JSON).
 
-## Scripts
+## Desarrollo
 
-| Script          | Qué hace                                |
-| --------------- | --------------------------------------- |
-| `pnpm check`    | lint + prettier + tipos + tests + build |
-| `pnpm db:new x` | nueva migración                         |
-| `pnpm db:reset` | DB local desde cero                     |
-| `pnpm db:types` | regenera tipos de la DB                 |
+Necesitas:
+
+- Node 20 y pnpm.
+- Rust estable.
+- macOS: Xcode Command Line Tools (`xcode-select --install`).
+- Windows: Microsoft C++ Build Tools + WebView2.
+
+```bash
+pnpm install
+pnpm desktop   # abre la app con recarga en vivo
+```
+
+| Script               | Qué hace                                               |
+| -------------------- | ------------------------------------------------------ |
+| `pnpm desktop`       | app en modo desarrollo                                 |
+| `pnpm desktop:build` | instalador local en `src-tauri/target/release/bundle/` |
+| `pnpm check`         | lint + prettier + tipos + tests + build + cargo check  |
+
+## Publicar
+
+1. Subir `version` en `src-tauri/tauri.conf.json` (y en `package.json`, `Cargo.toml`).
+2. PR → CI verde → merge a `main`.
+3. GitHub Actions crea el Release con los instaladores.
+
+Detalle: `docs/ci-cd.md`.
 
 ## Docs
 
 - `AGENTS.md` → reglas (humanos y agentes)
-- `docs/backend-checklist.md` → lo que falta en backend
-- `docs/auth.md` → sesión y guards
-- `docs/encryption.md` → cifrado E2E
-- `docs/password-recovery.md` → recuperar contraseña (pendiente)
+- `contributing.md` → cómo aportar
+- `docs/data.md` → SQLite, ruta del archivo, formato del respaldo
+- `docs/ci-cd.md` → CI, releases y auto-update
 - `docs/css.md` → tokens y estilos
+- `docs/testing.md` → qué y cómo probar
+
+## Licencia
+
+MIT
