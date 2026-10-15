@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
+import { Icon } from '@/components/ui/icon'
 import { Progress } from '@/components/ui/progress'
 import type { Summary } from '@/lib/finance/calc'
 import { formatMoney } from '@/lib/finance/format'
@@ -8,17 +8,11 @@ import styles from './panel.module.css'
 
 interface BudgetPanelProps {
   summary: Summary
-  onEdit: () => void
   onOver: () => void
   onAdd: (categoryId: string) => void
 }
 
-export function BudgetPanel({
-  summary,
-  onEdit,
-  onOver,
-  onAdd,
-}: BudgetPanelProps) {
+export function BudgetPanel({ summary, onOver, onAdd }: BudgetPanelProps) {
   const over = summary.overBudget
   const overTotal = over.reduce((sum, c) => sum + c.over, 0)
   const spent = summary.categories.reduce((sum, c) => sum + c.spent, 0)
@@ -30,34 +24,38 @@ export function BudgetPanel({
   const items = [...summary.categories].sort((a, b) => b.ratio - a.ratio)
 
   return (
-    <section className={styles.panel}>
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>II · Presupuestos</p>
-        <h2 className={styles.title}>
-          {budget ? Math.round((spent / budget) * 100) : 0}
-          <span>% usado</span>
-        </h2>
-        {over.length > 0 ? (
-          <button type="button" className={styles.alert} onClick={onOver}>
+    <>
+      <div className={styles.summary}>
+        <p className={styles.big}>
+          {budget ? Math.round((spent / budget) * 100) : 0}%<span>usado</span>
+        </p>
+        <p className={styles.muted}>
+          {formatMoney(spent)} de <strong>{formatMoney(budget)}</strong>
+        </p>
+      </div>
+
+      {over.length > 0 && (
+        <button type="button" className={styles.alert} onClick={onOver}>
+          <Icon name="alert" size={18} />
+          <span>
             <strong>
               {over.length} {over.length === 1 ? 'excedido' : 'excedidos'}
-            </strong>
-            <span>+{formatMoney(overTotal)} sobre lo planeado →</span>
-          </button>
-        ) : (
-          <p className={styles.ok}>Todo dentro del presupuesto.</p>
-        )}
-      </header>
+            </strong>{' '}
+            · +{formatMoney(overTotal)} sobre lo planeado
+          </span>
+        </button>
+      )}
 
       <ul className={styles.list}>
         {items.map(({ category, spent, ratio, over }) => {
           const noBudget = category.budget === 0
+          const isOver = over > 0 && !noBudget
           return (
             <li key={category.id}>
               <button
                 type="button"
-                className={styles.budgetRow}
-                data-over={(over > 0 && !noBudget) || undefined}
+                className={`${styles.row} ${styles.budgetRow}`}
+                data-over={isOver || undefined}
                 onClick={() => onAdd(category.id)}
                 title={`Registrar gasto en ${category.name}`}
               >
@@ -66,43 +64,28 @@ export function BudgetPanel({
                   <small>
                     {noBudget
                       ? 'Sin presupuesto'
-                      : over > 0
+                      : isOver
                         ? `+${formatMoney(over)}`
                         : `Quedan ${formatMoney(category.budget - spent)}`}
                   </small>
                 </span>
                 <span className={styles.amount}>
                   {formatMoney(spent)}
-                  <small>/ {formatMoney(category.budget)}</small>
+                  <small>de {formatMoney(category.budget)}</small>
                 </span>
                 <Progress
                   className={styles.bar}
                   value={noBudget ? 0 : ratio}
-                  tone={
-                    over > 0 && !noBudget
-                      ? 'warning'
-                      : ratio >= 0.8
-                        ? 'muted'
-                        : 'ink'
-                  }
+                  tone={isOver ? 'warning' : ratio >= 0.8 ? 'muted' : 'primary'}
                 />
               </button>
             </li>
           )
         })}
         {items.length === 0 && (
-          <li className={styles.empty}>Sin categorías. Agrégalas.</li>
+          <li className={styles.empty}>Sin categorías. Agrégalas con ✎.</li>
         )}
       </ul>
-
-      <footer className={styles.foot}>
-        <span>
-          {formatMoney(spent)} de <strong>{formatMoney(budget)}</strong>
-        </span>
-        <Button type="button" variant="link" onClick={onEdit}>
-          Editar
-        </Button>
-      </footer>
-    </section>
+    </>
   )
 }

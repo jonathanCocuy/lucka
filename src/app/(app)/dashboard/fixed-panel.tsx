@@ -1,19 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Icon } from '@/components/ui/icon'
 import { Progress } from '@/components/ui/progress'
 import type { Summary } from '@/lib/finance/calc'
 import { formatMoney } from '@/lib/finance/format'
 import { useFinance } from '../finance-provider'
 import styles from './panel.module.css'
 
-interface FixedPanelProps {
-  summary: Summary
-  onEdit: () => void
-}
-
-export function FixedPanel({ summary, onEdit }: FixedPanelProps) {
+export function FixedPanel({ summary }: { summary: Summary }) {
   const { toggleFixedPaid } = useFinance()
   const [error, setError] = useState<string | null>(null)
   const paidCount = summary.fixed.filter(f => f.isPaid).length
@@ -25,28 +20,30 @@ export function FixedPanel({ summary, onEdit }: FixedPanelProps) {
   )
 
   return (
-    <section className={styles.panel}>
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>I · Gastos fijos</p>
-        <h2 className={styles.title}>
-          {paidCount}
-          <span>/{total} pagados</span>
-        </h2>
-        <Progress value={total ? paidCount / total : 0} thin />
-      </header>
+    <>
+      <div className={styles.summary}>
+        <p className={styles.big}>
+          {paidCount}/{total}
+          <span>pagados</span>
+        </p>
+        <p className={styles.muted}>
+          Pendiente <strong>{formatMoney(summary.committed)}</strong>
+        </p>
+      </div>
+      <Progress value={total ? paidCount / total : 0} tone="mint" />
 
       <ul className={styles.list}>
         {items.map(({ fixed, isPaid, paid, pending }) => (
           <li key={fixed.id}>
             <button
               type="button"
-              className={styles.fixedRow}
+              className={`${styles.row} ${styles.fixedRow}`}
               data-paid={isPaid || undefined}
               aria-pressed={isPaid}
               onClick={async () => setError(await toggleFixedPaid(fixed.id))}
             >
               <span className={styles.check} aria-hidden>
-                {isPaid ? '✓' : ''}
+                {isPaid && <Icon name="check" size={14} strokeWidth={3} />}
               </span>
               <span className={styles.name}>
                 {fixed.name}
@@ -65,20 +62,11 @@ export function FixedPanel({ summary, onEdit }: FixedPanelProps) {
           </li>
         ))}
         {total === 0 && (
-          <li className={styles.empty}>Sin gastos fijos. Agrégalos.</li>
+          <li className={styles.empty}>Sin gastos fijos. Agrégalos con ✎.</li>
         )}
       </ul>
 
       {error && <p className={styles.error}>{error}</p>}
-
-      <footer className={styles.foot}>
-        <span>
-          Pendiente <strong>{formatMoney(summary.committed)}</strong>
-        </span>
-        <Button type="button" variant="link" onClick={onEdit}>
-          Editar
-        </Button>
-      </footer>
-    </section>
+    </>
   )
 }

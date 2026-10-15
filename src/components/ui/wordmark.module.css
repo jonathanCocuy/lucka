@@ -1,20 +1,19 @@
 .wordmark {
-  display: inline-block;
-  font-family: var(--font-serif);
-  font-weight: var(--weight-medium);
-  line-height: 0.9;
-  letter-spacing: var(--tracking-brand);
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
 }
 
-.sm {
-  font-size: var(--text-xl);
-}
-
-.md {
-  font-size: var(--text-2xl);
-}
-
-.lg {
-  font-size: clamp(4rem, 10vw, 9rem);
+.mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  font-size: var(--text-md);
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+  border-radius: var(--radius-sm);
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import field from '@/components/ui/field.module.css'
+import { Icon } from '@/components/ui/icon'
 import { MoneyInput } from '@/components/ui/money-input'
 import type { Category } from '@/lib/finance/types'
 import { newId } from '../finance-provider'
@@ -69,13 +70,13 @@ export function CategoryEditor({ items, onChange }: CategoryEditorProps) {
               aria-label={`Quitar ${c.name}`}
               onClick={() => onChange(items.filter(x => x.id !== c.id))}
             >
-              ×
+              <Icon name="close" size={16} />
             </button>
           </div>
         ))}
       </div>
       <button type="button" className={styles.add} onClick={() => add()}>
-        + Otra categoría
+        <Icon name="plus" size={16} /> Otra categoría
       </button>
     </div>
   )

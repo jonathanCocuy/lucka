@@ -43,7 +43,7 @@ export function UpdateBanner() {
         </Button>
         <Button
           type="button"
-          variant="link"
+          variant="ghost"
           disabled={busy}
           onClick={() => setUpdate(null)}
         >

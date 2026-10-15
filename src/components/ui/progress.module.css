@@ -1,18 +1,16 @@
 .track {
   display: block;
-  height: 3px;
+  height: 6px;
   overflow: hidden;
   background: var(--color-track);
-}
-
-.thin {
-  height: 1px;
+  border-radius: var(--radius-full);
 }
 
 /* Entra creciendo desde la izquierda; luego sigue el valor con transición. */
 .fill {
   display: block;
   height: 100%;
+  border-radius: var(--radius-full);
   transform-origin: left center;
   animation: grow var(--duration-slow) var(--ease-out) both;
   transition:
@@ -20,12 +18,12 @@
     background var(--duration-fast) var(--ease);
 }
 
-.ink {
-  background: var(--color-ink);
-}
-
 .primary {
   background: var(--color-primary);
+}
+
+.mint {
+  background: var(--color-mint);
 }
 
 .warning {

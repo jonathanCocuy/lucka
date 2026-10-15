@@ -1,14 +1,23 @@
 import type { ButtonHTMLAttributes } from 'react'
 import styles from './button.module.css'
 
-type Variant = 'ink' | 'outline' | 'link'
+type Variant = 'primary' | 'soft' | 'ghost'
 
 export function Button({
   className,
-  variant = 'ink',
+  variant = 'primary',
+  block,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
-  const classes = [styles.button, styles[variant], className]
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant
+  block?: boolean
+}) {
+  const classes = [
+    styles.button,
+    styles[variant],
+    block && styles.block,
+    className,
+  ]
     .filter(Boolean)
     .join(' ')
   return <button className={classes} {...props} />

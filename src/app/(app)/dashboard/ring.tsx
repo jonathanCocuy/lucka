@@ -1,9 +1,8 @@
 import { formatMoney } from '@/lib/finance/format'
 import styles from './ring.module.css'
 
-const R = 88
+const R = 92
 const C = 2 * Math.PI * R
-const TICKS = Array.from({ length: 72 }, (_, i) => i * 5)
 
 interface RingProps {
   income: number
@@ -21,35 +20,28 @@ export function Ring({ income, spent, committed, available }: RingProps) {
   return (
     <div className={styles.ring}>
       <svg viewBox="0 0 220 220" className={styles.svg} aria-hidden>
-        <g className={styles.ticks}>
-          {TICKS.map(deg => (
-            <line
-              key={deg}
-              x1="110"
-              y1="4"
-              x2="110"
-              y2={deg % 45 === 0 ? 12 : 8}
-              transform={`rotate(${deg} 110 110)`}
-            />
-          ))}
-        </g>
         <g transform="rotate(-90 110 110)">
           <circle className={styles.track} cx="110" cy="110" r={R} />
-          <circle
-            className={styles.committed}
-            cx="110"
-            cy="110"
-            r={R}
-            strokeDasharray={`${committedLen} ${C}`}
-            strokeDashoffset={-spentLen}
-          />
-          <circle
-            className={styles.spent}
-            cx="110"
-            cy="110"
-            r={R}
-            strokeDasharray={`${spentLen} ${C}`}
-          />
+          {/* Con extremos redondos un tramo de largo 0 se vería como un punto. */}
+          {committedLen > 0 && (
+            <circle
+              className={styles.committed}
+              cx="110"
+              cy="110"
+              r={R}
+              strokeDasharray={`${committedLen} ${C}`}
+              strokeDashoffset={-spentLen}
+            />
+          )}
+          {spentLen > 0 && (
+            <circle
+              className={styles.spent}
+              cx="110"
+              cy="110"
+              r={R}
+              strokeDasharray={`${spentLen} ${C}`}
+            />
+          )}
         </g>
       </svg>
       <div className={styles.center}>

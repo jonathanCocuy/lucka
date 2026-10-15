@@ -1,0 +1,35 @@
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--color-field);
+  border-radius: var(--radius-md);
+}
+
+.stats > div {
+  align-items: center;
+  text-align: center;
+}
+
+.dotSpent,
+.dotCommitted,
+.dotFree {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.dotSpent {
+  background: var(--color-primary);
+}
+
+.dotCommitted {
+  background: var(--color-mint);
+}
+
+.dotFree {
+  background: var(--color-track);
+}

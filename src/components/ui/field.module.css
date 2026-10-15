@@ -7,11 +7,9 @@
 }
 
 .label {
-  font-size: var(--text-2xs);
+  font-size: var(--text-sm);
   font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--color-text);
+  color: var(--color-text-muted);
 }
 
 .input {
@@ -21,21 +19,27 @@
   padding: 0 var(--space-4);
   font-size: var(--text-md);
   background: var(--color-field);
-  border: var(--line-soft);
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   outline: none;
   transition:
     border-color var(--duration-fast) var(--ease),
+    background var(--duration-fast) var(--ease),
     box-shadow var(--duration-fast) var(--ease);
 }
 
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
 .input:hover {
-  border-color: var(--color-text-muted);
+  border-color: var(--color-border);
 }
 
 .input:focus {
-  border-color: var(--color-ink);
-  box-shadow: inset 0 0 0 1px var(--color-ink);
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-soft);
 }
 
 select.input {

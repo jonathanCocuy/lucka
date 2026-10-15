@@ -7,7 +7,7 @@ interface MoneyInputProps {
   value: number
   onChange: (value: number) => void
   label?: string
-  size?: 'md' | 'lg'
+  size?: 'md' | 'lg' | 'hero'
   autoFocus?: boolean
   name?: string
 }
@@ -21,6 +21,7 @@ export function MoneyInput({
   autoFocus,
   name,
 }: MoneyInputProps) {
+  const text = value ? formatNumber(value) : ''
   return (
     <label className={`${styles.field} ${styles[size]}`}>
       {label && <span className={styles.label}>{label}</span>}
@@ -32,7 +33,9 @@ export function MoneyInput({
           autoComplete="off"
           autoFocus={autoFocus}
           placeholder="0"
-          value={value ? formatNumber(value) : ''}
+          // En hero el input crece con la cifra para que el $ quede pegado y centrado.
+          size={size === 'hero' ? Math.max(text.length, 1) : undefined}
+          value={text}
           onChange={e => onChange(Number(e.target.value.replace(/\D/g, '')))}
         />
       </span>
