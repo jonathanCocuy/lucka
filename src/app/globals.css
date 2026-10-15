@@ -1,28 +1,39 @@
 /*
  * Tokens de diseño. Único lugar donde se escriben colores literales.
  * Todo lo demás usa var(--token). Ver docs/css.md.
- * Estética editorial: crema, tinta, burdeos, pátina y ocre. Solo modo claro en v1.
+ * Estética joven y suave: lavanda, tarjetas blancas, lila y menta. Solo modo claro en v1.
  */
 :root {
   color-scheme: light;
 
-  /* Colores: tomados de una esfera con pátina. */
-  --color-bg: #f3eee5;
-  --color-surface: #e9e2d5;
-  --color-field: #fbf8f3;
-  --color-border: #d8d0c1;
-  --color-track: #ddd5c7;
-  --color-text: #15181d;
-  --color-text-muted: #6a6358;
-  --color-text-inverse: #f3eee5;
-  --color-ink: #15181d;
-  --color-primary: #7a1838;
-  --color-primary-hover: #5a1029;
-  --color-primary-soft: #f1e3e6;
-  --color-positive: #4e705f;
-  --color-warning: #a2591f;
-  --color-danger: #9b1c2c;
-  --color-overlay: rgb(21 24 29 / 0.5);
+  /* Colores */
+  --color-bg: #f4f3fb;
+  --color-surface: #ffffff;
+  --color-field: #f7f6fd;
+  --color-border: #e8e6f3;
+  --color-track: #ecebf6;
+  --color-text: #14141f;
+  --color-text-muted: #8a89a0;
+  --color-text-inverse: #ffffff;
+  --color-ink: #14141f;
+  --color-primary: #7c6cf2;
+  --color-primary-hover: #6a59e6;
+  --color-primary-soft: #ebe8fd;
+  --color-mint: #3ddbb4;
+  --color-mint-soft: #dcf8f0;
+  --color-positive: #17a683;
+  --color-warning: #e07b24;
+  --color-warning-soft: #fdeedf;
+  --color-danger: #e5484d;
+  --color-danger-soft: #fde8e9;
+  --color-overlay: rgb(20 20 31 / 0.32);
+
+  /* Sombras: casi invisibles, tiñen un poco de lila. */
+  --shadow-sm:
+    0 1px 2px rgb(20 20 31 / 0.04), 0 8px 24px rgb(124 108 242 / 0.06);
+  --shadow-md:
+    0 2px 4px rgb(20 20 31 / 0.04), 0 16px 40px rgb(124 108 242 / 0.12);
+  --shadow-lg: 0 24px 64px rgb(20 20 31 / 0.18);
 
   /* Espacios */
   --space-1: 0.25rem;
@@ -37,8 +48,7 @@
   --space-16: 4rem;
 
   /* Tipografía */
-  --font-sans: var(--font-geist), system-ui, -apple-system, sans-serif;
-  --font-serif: var(--font-bodoni), 'Bodoni 72', Didot, serif;
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, sans-serif;
   --text-2xs: 0.6875rem;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -47,19 +57,17 @@
   --text-xl: 1.75rem;
   --text-2xl: 2.5rem;
   --text-3xl: 3.5rem;
-  --text-display: clamp(2.75rem, 5vw, 4.75rem);
-  --tracking-wide: 0.22em;
-  --tracking-brand: 0.06em;
   --tracking-tight: -0.02em;
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
+  --weight-bold: 700;
 
   /* Bordes */
-  --radius-sm: 2px;
-  --radius-md: 2px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-full: 999px;
-  --line: 1px solid var(--color-ink);
   --line-soft: 1px solid var(--color-border);
 
   /* Movimiento: solo opacidad, posición corta y trazos. Nada rebota. */
@@ -101,8 +109,8 @@ select {
 }
 
 ::selection {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
+  background: var(--color-primary-soft);
+  color: var(--color-text);
 }
 
 :focus-visible {

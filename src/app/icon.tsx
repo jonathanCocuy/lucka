@@ -6,7 +6,7 @@ export const contentType = 'image/png'
 // El export estático lo genera en el build.
 export const dynamic = 'force-static'
 
-// "L" dibujada con dos trazos: ImageResponse no trae Bodoni sin cargar la fuente.
+// "L" dibujada con dos trazos: ImageResponse no trae la fuente sin cargarla.
 export default function Icon() {
   return new ImageResponse(
     (
@@ -18,7 +18,7 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           background: BRAND_COLORS.primary,
-          borderRadius: 4,
+          borderRadius: 8,
         }}
       >
         <div
@@ -36,7 +36,7 @@ export default function Icon() {
               top: 0,
               width: 3,
               height: 18,
-              background: BRAND_COLORS.cream,
+              background: BRAND_COLORS.inverse,
             }}
           />
           <div
@@ -46,7 +46,7 @@ export default function Icon() {
               bottom: 0,
               width: 11,
               height: 2,
-              background: BRAND_COLORS.cream,
+              background: BRAND_COLORS.inverse,
             }}
           />
         </div>

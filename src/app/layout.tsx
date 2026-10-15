@@ -1,16 +1,10 @@
 import type { Metadata } from 'next'
-import { Bodoni_Moda, Geist } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 
-const bodoni = Bodoni_Moda({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  style: ['normal', 'italic'],
-  variable: '--font-bodoni',
-})
-
-const geist = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist',
+  variable: '--font-jakarta',
 })
 
 export const metadata: Metadata = {
@@ -22,7 +16,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`${bodoni.variable} ${geist.variable}`}>
+    <html lang="es" className={jakarta.variable}>
       <body>{children}</body>
     </html>
   )

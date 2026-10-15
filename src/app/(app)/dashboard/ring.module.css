@@ -1,8 +1,9 @@
 .ring {
   position: relative;
   container-type: inline-size;
-  width: min(100%, 46dvh, 440px);
+  width: min(100%, 260px);
   aspect-ratio: 1;
+  margin: 0 auto;
 }
 
 .svg {
@@ -11,16 +12,12 @@
   overflow: visible;
 }
 
-.ticks line {
-  stroke: var(--color-border);
-  stroke-width: 1;
-}
-
 .track,
 .spent,
 .committed {
   fill: none;
-  stroke-width: 4;
+  stroke-width: 16;
+  stroke-linecap: round;
   transition:
     stroke-dasharray var(--duration-slow) var(--ease-out),
     stroke-dashoffset var(--duration-slow) var(--ease-out);
@@ -36,7 +33,7 @@
 }
 
 .committed {
-  stroke: var(--color-ink);
+  stroke: var(--color-mint);
   animation: draw calc(var(--duration-slow) * 1.5) calc(var(--stagger) * 3)
     var(--ease-out) both;
 }
@@ -48,25 +45,23 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   text-align: center;
 }
 
 .label {
   margin: 0;
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--color-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
 }
 
 .amount {
   margin: 0;
-  font-family: var(--font-serif);
   /* Relativo al anillo para que la cifra nunca lo toque. */
-  font-size: clamp(1.5rem, 11cqi, 3.75rem);
-  line-height: 1;
+  font-size: clamp(1.25rem, 12cqi, 2.25rem);
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
   letter-spacing: var(--tracking-tight);
   animation: enter var(--duration-slow) calc(var(--stagger) * 2) var(--ease-out)
     both;
@@ -78,9 +73,7 @@
 
 .sub {
   margin: 0;
-  font-family: var(--font-serif);
-  font-size: var(--text-sm);
-  font-style: italic;
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
 

@@ -1,24 +1,25 @@
 import { ViewTransition } from 'react'
 import styles from './wordmark.module.css'
 
-type Size = 'sm' | 'md' | 'lg'
-
 // El nombre "brand" deja el logo quieto mientras la página cambia.
+// `compact` = solo el símbolo (sidebar).
 export function Wordmark({
-  size = 'md',
+  compact,
   className,
 }: {
-  size?: Size
+  compact?: boolean
   className?: string
 }) {
   return (
     <ViewTransition name="brand">
       <span
-        className={[styles.wordmark, styles[size], className]
-          .filter(Boolean)
-          .join(' ')}
+        className={[styles.wordmark, className].filter(Boolean).join(' ')}
+        aria-label={compact ? 'Lucka' : undefined}
       >
-        Lucka
+        <span className={styles.mark} aria-hidden>
+          L
+        </span>
+        {!compact && 'Lucka'}
       </span>
     </ViewTransition>
   )

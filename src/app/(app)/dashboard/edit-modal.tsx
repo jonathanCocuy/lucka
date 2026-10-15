@@ -13,10 +13,10 @@ import styles from './forms.module.css'
 
 export type EditKind = 'fixed' | 'categories' | 'profile'
 
-const TITLES: Record<EditKind, [string, string]> = {
-  fixed: ['Ajustes', 'Gastos fijos'],
-  categories: ['Ajustes', 'Categorías y presupuestos'],
-  profile: ['Ajustes', 'Ingreso e inversiones'],
+const TITLES: Record<EditKind, string> = {
+  fixed: 'Gastos fijos',
+  categories: 'Categorías y presupuestos',
+  profile: 'Ingreso e inversiones',
 }
 
 interface EditModalProps {
@@ -26,15 +26,9 @@ interface EditModalProps {
 
 export function EditModal({ edit, onClose }: EditModalProps) {
   const { data } = useFinance()
-  const [eyebrow, title] = TITLES[edit ?? 'fixed']
+  const title = TITLES[edit ?? 'fixed']
   return (
-    <Modal
-      open={edit !== null}
-      onClose={onClose}
-      eyebrow={eyebrow}
-      title={title}
-      wide
-    >
+    <Modal open={edit !== null} onClose={onClose} title={title} wide>
       {edit && data && <EditForm edit={edit} data={data} onClose={onClose} />}
     </Modal>
   )
@@ -96,21 +90,17 @@ function EditForm({
       )}
       {error && <p className={styles.error}>{error}</p>}
 
-      <footer className={styles.footer}>
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancelar
-        </Button>
-        <Button
-          type="submit"
-          disabled={
-            saving ||
-            (edit === 'profile' &&
-              (profile.monthlyIncome <= 0 || !profile.name.trim()))
-          }
-        >
-          {saving ? 'Guardando…' : 'Guardar'}
-        </Button>
-      </footer>
+      <Button
+        type="submit"
+        block
+        disabled={
+          saving ||
+          (edit === 'profile' &&
+            (profile.monthlyIncome <= 0 || !profile.name.trim()))
+        }
+      >
+        {saving ? 'Guardando…' : 'Guardar'}
+      </Button>
     </form>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Icon } from '@/components/ui/icon'
 import { Modal } from '@/components/ui/modal'
 import { parseISODate } from '@/lib/finance/calc'
 import { formatMoney, formatShortDate } from '@/lib/finance/format'
@@ -47,7 +48,7 @@ export function MovementsModal({ open, onClose }: MovementsModalProps) {
               aria-label="Borrar gasto"
               onClick={async () => setError(await removeExpense(e.id))}
             >
-              ×
+              <Icon name="close" size={16} />
             </button>
           </li>
         ))}
@@ -72,20 +73,22 @@ export function MovementsModal({ open, onClose }: MovementsModalProps) {
                 <span className={styles.desc}>
                   {i.description || 'Sin descripción'}
                 </span>
-                <span className={styles.money}>+ {formatMoney(i.amount)}</span>
+                <span className={styles.money} data-income>
+                  +{formatMoney(i.amount)}
+                </span>
                 <button
                   type="button"
                   className={styles.remove}
                   aria-label="Borrar ingreso"
                   onClick={async () => setError(await removeIncome(i.id))}
                 >
-                  ×
+                  <Icon name="close" size={16} />
                 </button>
               </li>
             ))}
           </ul>
           <p className={styles.total}>
-            Total extra <strong>+ {formatMoney(summary.extraIncome)}</strong>
+            Total extra <strong>+{formatMoney(summary.extraIncome)}</strong>
           </p>
         </>
       )}

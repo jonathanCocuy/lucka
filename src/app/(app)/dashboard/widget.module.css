@@ -1,0 +1,129 @@
+.widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease),
+    opacity var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease);
+  animation: reveal var(--duration-slow) var(--ease-out) both;
+}
+
+/* Modo Personalizar: se mueve un poco, como los íconos del teléfono. */
+.widget[data-editing] {
+  cursor: grab;
+  border-color: var(--color-border);
+  border-style: dashed;
+  animation: wiggle 2.4s var(--ease) infinite;
+}
+
+.widget[data-dragging] {
+  opacity: 0.4;
+  animation: none;
+}
+
+.widget[data-over] {
+  border-color: var(--color-primary);
+  border-style: solid;
+  box-shadow: var(--shadow-md);
+  animation: none;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.grip {
+  display: grid;
+  color: var(--color-text-muted);
+}
+
+.tools {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.tool,
+.action {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+  background: var(--color-field);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease),
+    background var(--duration-fast) var(--ease);
+}
+
+.tool:hover:not(:disabled),
+.action:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.tool:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.hide:hover:not(:disabled) {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+}
+
+.widget[data-editing] .body {
+  opacity: 0.6;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-0.3deg);
+  }
+
+  75% {
+    transform: rotate(0.3deg);
+  }
+}

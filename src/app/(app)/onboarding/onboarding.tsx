@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
+import { Icon } from '@/components/ui/icon'
 import { Progress } from '@/components/ui/progress'
+import { Wordmark } from '@/components/ui/wordmark'
 import { syncInvestmentFixed, unassigned } from '@/lib/finance/calc'
 import { formatMoney } from '@/lib/finance/format'
 import type {
@@ -94,13 +96,8 @@ export function Onboarding() {
 
   return (
     <main className={styles.page}>
-      <aside className={styles.side}>
-        <p className={styles.issue}>
-          Hola{profile.name.trim() && `, ${profile.name.trim()}`}
-        </p>
-        <p key={step} className={styles.number}>
-          {String(step + 1).padStart(2, '0')}
-        </p>
+      <header className={styles.top}>
+        <Wordmark />
         <ol className={styles.steps}>
           {STEPS.map((s, i) => (
             <li
@@ -108,17 +105,26 @@ export function Onboarding() {
               className={styles.step}
               data-state={i === step ? 'current' : i < step ? 'done' : 'next'}
             >
-              <span>{String(i + 1).padStart(2, '0')}</span> {s.label}
+              <span className={styles.stepDot}>
+                {i < step ? (
+                  <Icon name="check" size={12} strokeWidth={3} />
+                ) : (
+                  i + 1
+                )}
+              </span>
+              <span className={styles.stepLabel}>{s.label}</span>
             </li>
           ))}
         </ol>
-      </aside>
+        <p className={styles.hello}>
+          Hola{profile.name.trim() && `, ${profile.name.trim()}`}
+        </p>
+      </header>
 
       <section className={styles.content}>
         <Progress
           className={styles.progress}
           value={(step + 1) / STEPS.length}
-          tone="primary"
         />
 
         <form
@@ -136,7 +142,7 @@ export function Onboarding() {
         >
           <div className={styles.heading}>
             <p className={styles.eyebrow}>
-              Paso {step + 1} de {STEPS.length} · {current.label}
+              Paso {step + 1} de {STEPS.length}
             </p>
             <h1 className={styles.title}>{current.title}</h1>
             <p className={styles.hint}>{current.hint}</p>
@@ -161,14 +167,15 @@ export function Onboarding() {
           <footer className={styles.footer}>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               disabled={step === 0}
               onClick={() => setStep(step - 1)}
             >
-              Atrás
+              <Icon name="chevronLeft" size={18} /> Atrás
             </Button>
             <Button type="submit" disabled={!canContinue || saving}>
               {saving ? 'Guardando…' : isLast ? 'Entrar' : 'Siguiente'}
+              {!saving && <Icon name="chevronRight" size={18} />}
             </Button>
           </footer>
         </form>
