@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { AppShell } from '@/components/ui/app-shell'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
@@ -8,8 +8,12 @@ import {
   hide,
   loadLayout,
   move,
+  nextSize,
+  resize,
   saveLayout,
   show,
+  sizeOf,
+  snapSize,
   type Layout,
   type WidgetId,
 } from '@/lib/dashboard/layout'
@@ -48,6 +52,8 @@ export function Dashboard() {
   const [draft, setDraft] = useState<Layout | null>(null)
   const [dragging, setDragging] = useState<WidgetId | null>(null)
   const [over, setOver] = useState<WidgetId | null>(null)
+  const [resizing, setResizing] = useState<WidgetId | null>(null)
+  const grid = useRef<HTMLElement>(null)
   if (!data || !summary) return null
 
   const close = () => setOpen(null)
@@ -122,6 +128,15 @@ export function Dashboard() {
     setDraft(move(draft, dragging, before))
   }
 
+  // px arrastrados → columnas de la grilla de 6 → paso más cercano.
+  const resizeTo = (id: WidgetId, width: number) => {
+    if (!draft || !grid.current) return
+    const gap = parseFloat(getComputedStyle(grid.current).columnGap) || 0
+    const column = (grid.current.clientWidth - gap * 5) / 6
+    const size = snapSize((width + gap) / (column + gap))
+    if (size !== sizeOf(draft, id)) setDraft(resize(draft, id, size))
+  }
+
   const editProps = (id: WidgetId, index: number): WidgetEdit | undefined => {
     if (!draft) return undefined
     const { visible } = draft
@@ -130,6 +145,7 @@ export function Dashboard() {
     return {
       dragging: dragging === id,
       over: over === id && dragging !== id,
+      resizing: resizing === id,
       onHide: () => setDraft(hide(draft, id)),
       onBack: prev ? () => setDraft(move(draft, id, prev)) : undefined,
       onForward: next ? () => setDraft(move(draft, next, id)) : undefined,
@@ -143,6 +159,11 @@ export function Dashboard() {
         setDragging(null)
         setOver(null)
       },
+      onResize: width => resizeTo(id, width),
+      onResizeStart: () => setResizing(id),
+      onResizeEnd: () => setResizing(null),
+      onCycleSize: () =>
+        setDraft(resize(draft, id, nextSize(sizeOf(draft, id)))),
     }
   }
 
@@ -184,12 +205,13 @@ export function Dashboard() {
         </header>
 
         {current.visible.length > 0 ? (
-          <main className={styles.grid}>
+          <main ref={grid} className={styles.grid}>
             {current.visible.map((id, index) => (
               <Widget
                 key={id}
                 title={TITLES[id]}
                 action={content[id].action}
+                size={sizeOf(current, id)}
                 edit={editProps(id, index)}
               >
                 {content[id].body}
