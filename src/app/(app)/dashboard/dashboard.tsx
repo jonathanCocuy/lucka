@@ -20,6 +20,7 @@ import {
 import type { ExpenseTarget } from '@/lib/finance/types'
 import { formatShortDate } from '@/lib/finance/format'
 import { useFinance } from '../finance-provider'
+import { VoiceButton } from '../voice/voice-button'
 import { AvailablePanel } from './available-panel'
 import { BudgetPanel } from './budget-panel'
 import styles from './dashboard.module.css'
@@ -267,6 +268,8 @@ export function Dashboard() {
         edit={open?.kind === 'edit' ? open.edit : null}
         onClose={close}
       />
+      {/* Fuera del modo personalizar: estorba al mover widgets. */}
+      {!draft && <VoiceButton />}
     </AppShell>
   )
 }

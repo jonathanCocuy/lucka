@@ -2,6 +2,8 @@
 
 Todo vive en un archivo SQLite en el equipo del usuario. Nada sale de ahí.
 
+Única excepción: registrar por voz con una key en línea (ver abajo).
+
 ## Dónde está el archivo
 
 | Sistema | Ruta                                                           |
@@ -24,6 +26,7 @@ Fuente: `src-tauri/migrations/`. Corren al abrir la base.
 | `expenses`         | Gastos. Apuntan a un fijo **o** a una categoría    |
 | `incomes`          | Ingresos extra                                     |
 | `investments`      | Una fila. Aporte mensual y saldo                   |
+| `ai_providers`     | IAs para la voz y cuál es la por defecto. Sin keys |
 
 - Montos `INTEGER` (pesos, sin decimales).
 - Fechas `TEXT`: `YYYY-MM-DD` para días, ISO para instantes.
@@ -59,3 +62,16 @@ Ajustes → Exportar / Importar. Código: `src/lib/local-db/backup.ts`.
 - Incluye fijos y categorías archivados: los gastos viejos apuntan a ellos.
 - Importar valida forma y `version`, y reemplaza todo.
 - Cambio de forma → subir `BACKUP_VERSION`.
+- `ai_providers` y `ai_prompted_at` no van: dependen del equipo.
+
+## Registrar por voz
+
+- Voz → texto: Whisper, siempre en el equipo. El audio no sale.
+- Texto → JSON: la IA que el usuario marcó por defecto.
+  - **Local** (Qwen, llama.cpp): nada sale del equipo.
+  - **OpenAI / Anthropic / Gemini**: el texto dicho y los nombres de categorías y fijos van a ese proveedor. La app lo avisa antes de pedir la key.
+- Keys: llavero del sistema (Keychain / Credential Manager), crate `keyring`.
+  - Nunca en SQLite ni en el respaldo.
+  - El front la manda una vez al guardarla. Solo Rust la lee.
+  - Se prueba antes de guardar. Quitar el proveedor la borra.
+- Modelos: `appDataDir/models`. Uno por tipo; bajar otro reemplaza al anterior.

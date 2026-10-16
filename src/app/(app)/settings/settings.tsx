@@ -12,6 +12,7 @@ import {
   wipeWithConfirm,
 } from '@/lib/api-client/backup'
 import { errorMessage } from '@/lib/api-client/http'
+import { AiSettings } from '../voice/ai-settings'
 import styles from './settings.module.css'
 
 type Message = { kind: 'notice' | 'error'; text: string } | null
@@ -50,6 +51,14 @@ export function Settings() {
           className={`${reveal.reveal} ${styles.section}`}
           style={stagger(1)}
         >
+          <h2>IA y voz</h2>
+          <AiSettings />
+        </section>
+
+        <section
+          className={`${reveal.reveal} ${styles.section}`}
+          style={stagger(2)}
+        >
           <h2>Respaldo</h2>
           <p className={styles.hint}>
             Un archivo JSON con todo. Sirve para cambiar de equipo o guardar una
@@ -86,7 +95,7 @@ export function Settings() {
 
         <section
           className={`${reveal.reveal} ${styles.section}`}
-          style={stagger(2)}
+          style={stagger(3)}
         >
           <h2>Borrar todo</h2>
           <p className={styles.hint}>
@@ -118,7 +127,7 @@ export function Settings() {
         {info && (
           <section
             className={`${reveal.reveal} ${styles.section}`}
-            style={stagger(3)}
+            style={stagger(4)}
           >
             <h2>Sobre Lucka</h2>
             <dl className={styles.facts}>

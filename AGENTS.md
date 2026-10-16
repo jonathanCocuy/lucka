@@ -111,6 +111,8 @@ Guía completa: `docs/testing.md`. Agente: `test-planner`.
 
 - Sin auth ni roles: un usuario por computador.
 - Datos en claro en el archivo SQLite del usuario. Nunca salen del equipo.
+  - Excepción: voz con key en línea. El texto dicho va al proveedor elegido. Ver `docs/data.md`.
+  - Keys solo en el llavero del sistema. Nunca en SQLite, logs ni respaldos.
 - Nada de servidor: sin `cookies()`, `headers()`, route handlers ni server actions. Rompen el export.
 - Cada API de Tauri nueva necesita su permiso en `src-tauri/capabilities/default.json`. Pedir lo mínimo.
 - CSP estricta en `tauri.conf.json`. No abrir dominios externos.

@@ -53,6 +53,14 @@ interface FinanceContextValue {
   addIncome: (income: Omit<Income, 'id'>) => Run
   removeIncome: (id: string) => Run
   toggleFixedPaid: (id: string) => Run
+  // Varios registros de una vez (voz). Si uno no es válido, no se guarda ninguno.
+  addMany: (input: ManyInput) => Run
+}
+
+export interface ManyInput {
+  newCategories: Category[]
+  expenses: Omit<Expense, 'id'>[]
+  incomes: Omit<Income, 'id'>[]
 }
 
 // Qué cambia en pantalla y cómo se guarda. O el error de validación.
@@ -287,9 +295,55 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
             client.clearPayments(id, toISODate(start), toISODate(end)),
         }
       }),
+
+    addMany: input => inPanel(s => planMany(s, input)),
   }
 
   return <FinanceContext value={value}>{children}</FinanceContext>
+}
+
+function planMany(s: FinanceSnapshot, input: ManyInput): Change | string {
+  if (input.expenses.length + input.incomes.length === 0) {
+    return 'No hay nada para guardar'
+  }
+  const categories = validateCategories([
+    ...s.categories,
+    ...input.newCategories,
+  ])
+  if (!categories.ok) return categories.error
+  const withCategories = { ...s, categories: categories.value }
+
+  const expenses: Expense[] = []
+  for (const expense of input.expenses) {
+    const parsed = validateExpense(expense)
+    if (!parsed.ok) return parsed.error
+    if (!targetExists(withCategories, parsed.value.target)) {
+      return 'Elige a qué va cada gasto'
+    }
+    expenses.push({ ...parsed.value, id: newId() })
+  }
+  const incomes: Income[] = []
+  for (const income of input.incomes) {
+    const parsed = validateIncome(income)
+    if (!parsed.ok) return parsed.error
+    incomes.push({ ...parsed.value, id: newId() })
+  }
+
+  const hasNew = input.newCategories.length > 0
+  return {
+    next: {
+      ...withCategories,
+      expenses: [...s.expenses, ...expenses],
+      incomes: [...s.incomes, ...incomes],
+    },
+    save: client =>
+      client.addMany({
+        categories: hasNew ? categories.value : null,
+        previousCategories: s.categories,
+        expenses,
+        incomes,
+      }),
+  }
 }
 
 export function useFinance() {

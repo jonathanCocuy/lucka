@@ -1,13 +1,14 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Lucka",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "identifier": "dev.juanramirez.lucka",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
     "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "pnpm build"
+    "beforeBuildCommand": "pnpm build",
+    "beforeBundleCommand": "node scripts/stage-native-libs.mjs"
   },
   "app": {
     "windows": [
