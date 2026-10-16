@@ -4,5 +4,8 @@ fn main() {
         println!("cargo:rustc-link-arg=-Wl,-rpath,@executable_path");
         println!("cargo:rustc-link-arg=-Wl,-rpath,@executable_path/../Frameworks");
     }
+    // tauri-build exige que `libs` exista al compilar; se llena después,
+    // antes de empaquetar (scripts/stage-native-libs.mjs).
+    std::fs::create_dir_all("libs").expect("no se pudo crear src-tauri/libs");
     tauri_build::build()
 }
