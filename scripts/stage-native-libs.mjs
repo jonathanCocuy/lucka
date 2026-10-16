@@ -11,7 +11,7 @@ import {
 } from 'node:fs'
 import { join } from 'node:path'
 
-// Los nombres que el binario pide (@rpath/...). Fijos en tauri.macos.conf.json.
+// Los nombres que el binario pide (@rpath/...). Fijos en tauri.macos.conf.json (frameworks: Tauri las firma).
 const MAC_LIBS = [
   'libggml.0.dylib',
   'libggml-base.0.dylib',
