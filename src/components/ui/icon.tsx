@@ -19,6 +19,8 @@ const PATHS = {
   arrowUp: 'M12 19V5M6 11l6-6 6 6',
   arrowDown: 'M12 5v14M6 13l6 6 6-6',
   resize: 'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4',
+  mic: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
+  stop: 'M7 7h10v10H7z',
 } as const
 
 export type IconName = keyof typeof PATHS

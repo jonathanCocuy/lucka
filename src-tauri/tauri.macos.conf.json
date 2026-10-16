@@ -1,0 +1,17 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "bundle": {
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "entitlements": "./Entitlements.plist",
+      "files": {
+        "Frameworks/libggml.0.dylib": "./libs/libggml.0.dylib",
+        "Frameworks/libggml-base.0.dylib": "./libs/libggml-base.0.dylib",
+        "Frameworks/libggml-cpu.0.dylib": "./libs/libggml-cpu.0.dylib",
+        "Frameworks/libggml-metal.0.dylib": "./libs/libggml-metal.0.dylib",
+        "Frameworks/libllama.0.dylib": "./libs/libllama.0.dylib",
+        "Frameworks/libllama-common.0.dylib": "./libs/libllama-common.0.dylib"
+      }
+    }
+  }
+}

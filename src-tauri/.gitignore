@@ -2,3 +2,5 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+# Librerías de llama.cpp que junta scripts/stage-native-libs.mjs
+/libs/

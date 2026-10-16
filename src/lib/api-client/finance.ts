@@ -28,6 +28,14 @@ import {
   saveSettings,
 } from '@/lib/local-db/settings'
 
+// Varios registros de una vez (voz). `categories` = lista completa si hay nuevas.
+export interface Batch {
+  categories: Category[] | null
+  previousCategories: Category[]
+  expenses: Expense[]
+  incomes: Income[]
+}
+
 // Lo que el usuario tiene guardado.
 export interface FinanceSnapshot {
   onboarded: boolean
@@ -83,5 +91,31 @@ export function createFinanceApi() {
     clearPayments,
     addIncome,
     removeIncome,
+
+    // Todo o nada: si algo falla, se borra lo que alcanzó a entrar.
+    async addMany(batch: Batch) {
+      const added = { expenses: [] as string[], incomes: [] as string[] }
+      try {
+        if (batch.categories) await replaceCategories(batch.categories)
+        for (const expense of batch.expenses) {
+          await addExpense(expense)
+          added.expenses.push(expense.id)
+        }
+        for (const income of batch.incomes) {
+          await addIncome(income)
+          added.incomes.push(income.id)
+        }
+      } catch (error) {
+        // Sin transacciones (ver db.ts): se deshace a mano.
+        await Promise.allSettled([
+          ...added.expenses.map(id => removeExpense(id)),
+          ...added.incomes.map(id => removeIncome(id)),
+        ])
+        if (batch.categories) {
+          await replaceCategories(batch.previousCategories).catch(() => null)
+        }
+        throw error
+      }
+    },
   }
 }
