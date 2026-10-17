@@ -2,10 +2,11 @@
 
 ## Qué corre y cuándo
 
-| Workflow      | Cuándo                         | Qué hace                                                 |
-| ------------- | ------------------------------ | -------------------------------------------------------- |
-| `ci.yml`      | PR a feedback / staging / main | lint, prettier, tipos, tests, build + cargo check/clippy |
-| `release.yml` | push a `main` (merge de un PR) | reusa `ci.yml` → si la versión es nueva, publica         |
+| Workflow          | Cuándo                                      | Qué hace                                                           |
+| ----------------- | ------------------------------------------- | ------------------------------------------------------------------ |
+| `ci.yml`          | PR a feedback / staging / main              | lint, prettier, tipos, tests, build + cargo check/clippy           |
+| `release.yml`     | push a `main` (merge de un PR)              | reusa `ci.yml` → si la versión es nueva, publica                   |
+| `build-check.yml` | PR que toca `src-tauri/`, `scripts/` o deps | build real macOS universal + Windows, firma y arranque. No publica |
 
 Hooks locales:
 
