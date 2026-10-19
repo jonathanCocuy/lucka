@@ -1,6 +1,6 @@
 /*
  * Tokens de diseño. Único lugar donde se escriben colores literales.
- * Todo lo demás usa var(--token). Ver docs/css.md.
+ * Todo lo demás usa var(--token). Ver AGENTS.md §6.
  * Estética joven y suave: lavanda, tarjetas blancas, lila y menta. Solo modo claro en v1.
  */
 :root {

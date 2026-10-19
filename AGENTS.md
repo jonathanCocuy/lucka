@@ -85,8 +85,12 @@ Reglas:
   - Código sin lógica (componentes que solo pintan, wrappers, constantes).
   - Librerías externas (Tauri, Next).
 - Un test = un comportamiento. Nombre en español que diga qué se espera.
+  - ✅ `lanza 404 si el gasto no existe` · ❌ `test removeExpense case 2`
+- Sin lógica dentro del test (sin `if`, sin loops).
+- Mocks solo en el borde: `getDb`, `invoke` de Tauri.
+- Bug arreglado → un test que falle sin el fix.
 
-Guía completa: `docs/testing.md`. Agente: `test-planner`.
+Agente: `test-planner`. Correr: `pnpm test`.
 
 ---
 
@@ -111,13 +115,13 @@ Guía completa: `docs/testing.md`. Agente: `test-planner`.
 
 - Sin auth ni roles: un usuario por computador.
 - Datos en claro en el archivo SQLite del usuario. Nunca salen del equipo.
-  - Excepción: voz con key en línea. El texto dicho va al proveedor elegido. Ver `docs/data.md`.
+  - Excepción: voz con key en línea. El texto dicho va al proveedor elegido.
   - Keys solo en el llavero del sistema. Nunca en SQLite, logs ni respaldos.
 - Nada de servidor: sin `cookies()`, `headers()`, route handlers ni server actions. Rompen el export.
 - Cada API de Tauri nueva necesita su permiso en `src-tauri/capabilities/default.json`. Pedir lo mínimo.
 - CSP estricta en `tauri.conf.json`. No abrir dominios externos.
 
-Detalle: `docs/data.md`.
+Detalle: `docs/architecture.md` (Data layer, AI and voice).
 
 ---
 
@@ -127,8 +131,6 @@ Detalle: `docs/data.md`.
 - Colores, espacios y fuentes salen de `src/app/globals.css` con `var(--token)`.
 - Colores literales (`#fff`, `rgb()`) solo en `globals.css`. Lint y hooks lo bloquean.
 - Si falta un token, preguntar cuál agregar. No inventarlo.
-
-Detalle: `docs/css.md`.
 
 ---
 

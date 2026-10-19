@@ -1,10 +1,8 @@
 /**
  * Bans literal colour values in TS/JS/JSX. Colours live in the token layer:
- * `var(--token)` from src/app/globals.css for anything CSS can reach, and
- * `COLORS` / `CATEGORY_COLORS` from @/lib/constants/colors for the places it
- * can't (Stripe Elements, OG images, multi-colour SVG).
+ * `var(--token)` from src/app/globals.css.
  *
- * Four shapes are caught:
+ * Shapes caught:
  *   - raw hex                      `'#ff3c00'`
  *   - functional notation          `'rgba(0,0,0,.5)'`
  *   - Tailwind arbitrary values    `'bg-[#fff]'`
@@ -169,7 +167,7 @@ const noHardcodedColors = {
     docs: {
       description:
         'Disallow hardcoded colour values; use the design tokens instead.',
-      url: 'docs/css.md',
+      url: 'AGENTS.md',
     },
     schema: [
       {
@@ -182,11 +180,11 @@ const noHardcodedColors = {
     ],
     messages: {
       literal:
-        "Hardcoded colour '{{color}}'. Use a design token: `var(--token)` from src/app/globals.css in CSS/className, or `COLORS` from '@/lib/constants/colors' where CSS variables can't reach (Stripe Elements, OG images, multi-colour SVG). See docs/css.md. If no token matches, ask which token to add — do not inline the value.",
+        "Hardcoded colour '{{color}}'. Use a design token: `var(--token)` from src/app/globals.css. See AGENTS.md §6. If no token matches, ask which token to add — do not inline the value.",
       named:
-        "Hardcoded colour '{{color}}' on `{{position}}`. Use a design token — `var(--token)` in CSS/className, or `COLORS` from '@/lib/constants/colors' in TS. See docs/css.md.",
+        "Hardcoded colour '{{color}}' on `{{position}}`. Use a design token: `var(--token)` from src/app/globals.css. See AGENTS.md §6.",
       tailwindPalette:
-        "'{{color}}' uses Tailwind's built-in palette, which bypasses the design tokens. Use a token-backed class or `var(--token)` instead. See docs/css.md.",
+        "'{{color}}' uses Tailwind's built-in palette, which bypasses the design tokens. Tailwind is banned: use `var(--token)` in a CSS Module. See AGENTS.md §6.",
     },
   },
 

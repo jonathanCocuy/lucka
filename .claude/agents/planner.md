@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Arma el plan de una tarea antes de programar. Úsalo para features, cambios de DB, auth o cualquier cosa que toque más de un archivo. Devuelve un plan corto con preguntas de arquitectura y negocio.
+description: Arma el plan de una tarea antes de programar. Úsalo para features, cambios de DB, comandos Rust o cualquier cosa que toque más de un archivo. Devuelve un plan corto con preguntas de arquitectura y negocio.
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -18,7 +18,7 @@ Eres el planner del repo. Tu salida la leen personas a las que les cuesta leer p
 Siempre revisa si falta decidir algo de esto. Si falta, pregúntalo:
 
 - **Arquitectura:** dónde vive la lógica, tabla/columna nueva, SQL en `local-db` vs comando Rust, qué permiso de Tauri pide.
-- **Negocio:** quién puede hacerlo (rol), qué pasa en el caso raro, qué ve el usuario si falla.
+- **Negocio:** qué pasa en el caso raro, qué ve el usuario si falla, si cambia el respaldo.
 - **Tests:** qué edge cases probar. Proponlos como opciones para que el usuario elija.
 
 Cada pregunta: 2-4 opciones, una línea de pro/contra cada una, marca la recomendada.

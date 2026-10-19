@@ -73,13 +73,13 @@ const noHardcodedColorsCss = {
     docs: {
       description:
         'Disallow hardcoded colour values in CSS; use the design tokens.',
-      url: 'docs/css.md',
+      url: 'AGENTS.md',
     },
     messages: {
-      hex: "Hardcoded colour '#{{color}}'. Use a `var(--token)` from src/app/globals.css. See docs/css.md — if no token matches, ask which token to add rather than inlining the value.",
-      fn: "Hardcoded colour '{{color}}(...)'. Use a `var(--token)` from src/app/globals.css. See docs/css.md.",
+      hex: "Hardcoded colour '#{{color}}'. Use a `var(--token)` from src/app/globals.css. See AGENTS.md §6 — if no token matches, ask which token to add rather than inlining the value.",
+      fn: "Hardcoded colour '{{color}}(...)'. Use a `var(--token)` from src/app/globals.css. See AGENTS.md §6.",
       named:
-        "Hardcoded colour '{{color}}'. Use a `var(--token)` from src/app/globals.css (`--color-text`, `--color-text-inverse`). See docs/css.md.",
+        "Hardcoded colour '{{color}}'. Use a `var(--token)` from src/app/globals.css (`--color-text`, `--color-text-inverse`). See AGENTS.md §6.",
       fallback:
         "Colour literal in a `var()` fallback: '{{color}}'. The fallback is what actually renders whenever the token is undefined, so this is a hardcoded colour. Point at a token that exists in src/app/globals.css and drop the fallback.",
     },

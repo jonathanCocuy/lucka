@@ -127,7 +127,6 @@
       "extensions": [".ts", ".tsx", ".js", ".jsx", ".css"],
       "exempt": [
         "^src/app/globals\\.css$",
-        "^src/lib/constants/colors\\.ts$",
         "^eslint-rules/",
         "^\\.claude/",
         "^\\.next/",

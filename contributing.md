@@ -1,32 +1,35 @@
-# Cómo aportar
+# Contributing
 
-## Reglas clave
+## Key rules
 
-Completas en `AGENTS.md`. Las que más se olvidan:
+Full list in [`AGENTS.md`](AGENTS.md) (Spanish). The ones people forget:
 
-- Textos cortos. Comentarios solo con el **por qué**.
-- Solo **pnpm** (`pnpm dlx`, nunca `npx`).
-- Sin Tailwind, `any`, `eslint-disable`, `@ts-ignore`.
-- Archivos en kebab-case. Sin barrels.
-- Colores solo como tokens de `src/app/globals.css`.
-- SQL solo en `src/lib/local-db/`.
-- Librería nueva → preguntar en un issue antes.
+- Short text. Code comments explain **why**, never what.
+- **pnpm** only (`pnpm dlx`, never `npx`).
+- No Tailwind, `any`, `eslint-disable` or `@ts-ignore`.
+- Files in kebab-case. No barrel files.
+- Colors only as tokens from `src/app/globals.css`.
+- SQL only in `src/lib/local-db/`.
+- New dependency → ask in an issue first.
 
-## Abrir un PR
+How the app works: [`docs/architecture.md`](docs/architecture.md).
 
-1. Rama desde `main`: `feat/…`, `fix/…`, `chore/…`.
-2. `pnpm check` en verde local.
-3. PR a `main` con la plantilla llena.
-4. CI verde + revisión → merge.
+## Opening a PR
 
-No hay push directo a `main`, `staging` ni `feedback`. El hook lo bloquea.
-Nunca `--no-verify`.
+1. Branch from `main`: `feat/…`, `fix/…`, `chore/…`, `docs/…`.
+2. `pnpm check` passes locally.
+3. PR to `main` with the template filled in.
+4. Green CI + review → merge.
 
-## Qué valida
+No direct pushes to `main`, `staging` or `feedback`. A hook blocks them.
+Never use `--no-verify`.
 
-| Dónde       | Qué                                         |
-| ----------- | ------------------------------------------- |
-| Commit      | eslint + prettier en lo cambiado            |
-| Push        | bloquea ramas protegidas                    |
-| PR (`ci`)   | lint, prettier, tipos, tests, build de Next |
-| PR (`rust`) | `cargo check` + `cargo clippy -D warnings`  |
+## What gets checked
+
+| Where              | What                                                        |
+| ------------------ | ----------------------------------------------------------- |
+| Commit             | ESLint + Prettier on changed files                          |
+| Push               | Blocks protected branches                                   |
+| PR (`check`)       | Lint, Prettier, types, tests, Next build                    |
+| PR (`rust`)        | `cargo check` + `cargo clippy -D warnings`                  |
+| PR (`build-check`) | Real macOS + Windows build and launch (native changes only) |
