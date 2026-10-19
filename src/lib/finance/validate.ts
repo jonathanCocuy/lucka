@@ -1,14 +1,13 @@
 import type {
   Category,
   Expense,
-  FinanceData,
   FinanceProfile,
   FixedExpense,
   Income,
   Investment,
 } from './types'
 
-// Lo que llega a una server action viene de la red: los tipos no garantizan nada.
+// Lo que llega de la UI o de un respaldo importado no está garantizado por los tipos.
 type Result<T> = { ok: true; value: T } | { ok: false; error: string }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -141,25 +140,5 @@ export function validateIncome(input: unknown): Result<Omit<Income, 'id'>> {
     description:
       typeof input.description === 'string' ? input.description.trim() : '',
     date: input.date,
-  })
-}
-
-export function validateOnboarding(
-  input: unknown,
-): Result<Omit<FinanceData, 'expenses' | 'incomes'>> {
-  if (!isObject(input)) return fail('Datos inválidos')
-  const profile = validateProfile(input.profile)
-  if (!profile.ok) return profile
-  const fixed = validateFixed(input.fixed)
-  if (!fixed.ok) return fixed
-  const categories = validateCategories(input.categories)
-  if (!categories.ok) return categories
-  const investment = validateInvestment(input.investment)
-  if (!investment.ok) return investment
-  return ok({
-    profile: profile.value,
-    fixed: fixed.value,
-    categories: categories.value,
-    investment: investment.value,
   })
 }

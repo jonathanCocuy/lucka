@@ -148,9 +148,7 @@ if colors.get('enabled', False):
             deny(
                 f'BLOCKED — hardcoded colour `{found}` in {rel_path}.\n\n'
                 f'Colours come from the token layer, never from a literal:\n'
-                f'  - CSS / className: `var(--token)` defined in src/app/globals.css\n'
-                f"  - TS where CSS variables cannot reach (OG images, "
-                f"multi-colour SVG): `COLORS` from '@/lib/constants/colors'\n\n"
+                f'`var(--token)` defined in src/app/globals.css.\n\n'
                 f'Pick the matching existing token and re-run this tool call. If no token matches, '
                 f'STOP and ask the user which token to use or add — do not inline the value and do '
                 f'not invent a new token name on your own.'

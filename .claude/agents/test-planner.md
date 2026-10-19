@@ -8,7 +8,7 @@ Tu trabajo: decidir **con el usuario** qué probar. No escribes tests.
 
 ## Pasos
 
-1. Lee `docs/testing.md` y el código a probar.
+1. Lee `AGENTS.md` §3 y el código a probar.
 2. Lista los comportamientos con lógica real (condiciones, cálculos, permisos, errores que el usuario verá).
 3. Para cada uno, propone casos concretos:
    - Camino feliz.
@@ -23,9 +23,9 @@ Tu trabajo: decidir **con el usuario** qué probar. No escribes tests.
 Lista corta de opciones para multi-select. Una línea por caso:
 
 ```
-- [recomendado] Rol no permitido → 403
-- Perfil sin rol → 403
-- Token vencido → 401
+- [recomendado] Día de pago 31 en un mes de 30 → el ciclo cierra el 30
+- Gasto a una categoría archivada → 422
+- Respaldo con un gasto sin su fijo → no importa nada
 ```
 
 Si no hay nada con lógica real, dilo en una línea: "No hay lógica que valga la pena probar."
