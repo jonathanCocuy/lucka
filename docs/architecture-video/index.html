@@ -1,0 +1,2501 @@
+<!doctype html>
+<!--
+  Video de arquitectura del README. render(t) es puro para que cada cuadro sea exacto.
+  Re-grabar: abrir con ?record en Chrome headless a 1920×1080, llamar render(i / 30)
+  por cuadro, capturar y unir con ffmpeg (30 fps, H.264, yuv420p).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lucka architecture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,500&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      /* Tokens copiados de src/app/globals.css. Único bloque con colores literales. */
+      :root {
+        --color-bg: #f4f3fb;
+        --color-surface: #ffffff;
+        --color-field: #f7f6fd;
+        --color-border: #e8e6f3;
+        --color-track: #ecebf6;
+        --color-text: #14141f;
+        --color-text-muted: #8a89a0;
+        --color-text-inverse: #ffffff;
+        --color-ink: #14141f;
+        --color-primary: #7c6cf2;
+        --color-primary-hover: #6a59e6;
+        --color-primary-soft: #ebe8fd;
+        --color-mint: #3ddbb4;
+        --color-mint-soft: #dcf8f0;
+        --color-positive: #17a683;
+        --color-warning: #e07b24;
+        --color-warning-soft: #fdeedf;
+        --color-danger: #e5484d;
+        --color-danger-soft: #fde8e9;
+        --shadow-sm:
+          0 1px 2px rgb(20 20 31 / 0.04), 0 8px 24px rgb(124 108 242 / 0.06);
+        --shadow-md:
+          0 2px 4px rgb(20 20 31 / 0.04), 0 16px 40px rgb(124 108 242 / 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--color-ink);
+      }
+
+      .stage {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        transform-origin: 0 0;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-weight: 500;
+      }
+
+      .mono,
+      code,
+      .code,
+      .wl {
+        font-family: 'JetBrains Mono', monospace;
+        font-variant-ligatures: none;
+      }
+
+      /* ---------- Marco fijo ---------- */
+
+      .topbar {
+        position: absolute;
+        top: 44px;
+        left: 80px;
+        right: 80px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        z-index: 5;
+        font-size: 20px;
+        color: var(--color-text-muted);
+      }
+
+      .wordmark {
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--color-text);
+        letter-spacing: -0.02em;
+      }
+
+      .wordmark span {
+        color: var(--color-mint);
+      }
+
+      .wordmark em {
+        font-style: normal;
+        font-weight: 600;
+        font-size: 20px;
+        color: var(--color-text-muted);
+        margin-left: 10px;
+      }
+
+      .chapter {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 19px;
+      }
+
+      .progress {
+        position: absolute;
+        left: 80px;
+        right: 80px;
+        bottom: 40px;
+        height: 6px;
+        display: flex;
+        gap: 8px;
+        z-index: 5;
+      }
+
+      .progress div {
+        height: 100%;
+        border-radius: 3px;
+        background: var(--color-track);
+        overflow: hidden;
+      }
+
+      .progress i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--color-primary);
+      }
+
+      /* ---------- Escenas ---------- */
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .left {
+        position: absolute;
+        left: 80px;
+        top: 160px;
+        width: 630px;
+      }
+
+      .eyebrow {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 21px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-primary);
+      }
+
+      h2 {
+        font-size: 56px;
+        line-height: 1.1;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        margin: 18px 0 40px;
+      }
+
+      .bullets {
+        list-style: none;
+      }
+
+      .bullets li {
+        position: relative;
+        font-size: 28px;
+        line-height: 1.38;
+        padding-left: 34px;
+        margin-bottom: 24px;
+      }
+
+      .bullets li::before {
+        content: '';
+        position: absolute;
+        left: 2px;
+        top: 15px;
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+        background: var(--color-primary);
+      }
+
+      .bullets code,
+      .inline-code {
+        font-size: 0.82em;
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: var(--color-primary-soft);
+        color: var(--color-primary-hover);
+      }
+
+      .skills {
+        position: absolute;
+        left: 80px;
+        top: 850px;
+        width: 640px;
+      }
+
+      .skills p,
+      .why p {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        margin-bottom: 12px;
+      }
+
+      .chip {
+        display: inline-block;
+        padding: 8px 16px;
+        margin: 0 8px 10px 0;
+        border-radius: 999px;
+        font-size: 19px;
+        font-weight: 700;
+        background: var(--color-primary-soft);
+        color: var(--color-primary-hover);
+      }
+
+      .chip.mint {
+        background: var(--color-mint-soft);
+        color: var(--color-positive);
+      }
+
+      .why {
+        position: absolute;
+        left: 80px;
+        top: 720px;
+        width: 640px;
+      }
+
+      /* ---------- Piezas de diagrama ---------- */
+
+      .group {
+        position: absolute;
+        border-radius: 24px;
+        border: 2px dashed
+          color-mix(in srgb, var(--color-primary) 35%, transparent);
+        background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+      }
+
+      .group.rust {
+        border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+        background: color-mix(in srgb, var(--color-warning) 5%, transparent);
+      }
+
+      .group.store {
+        border-color: color-mix(
+          in srgb,
+          var(--color-positive) 40%,
+          transparent
+        );
+        background: color-mix(in srgb, var(--color-mint) 6%, transparent);
+      }
+
+      .glabel {
+        position: absolute;
+        top: -14px;
+        left: 20px;
+        padding: 0 10px;
+        background: var(--color-bg);
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 17px;
+        letter-spacing: 0.06em;
+        color: var(--color-primary);
+      }
+
+      .group.rust .glabel {
+        color: var(--color-warning);
+      }
+
+      .group.store .glabel {
+        color: var(--color-positive);
+      }
+
+      .gnote {
+        position: absolute;
+        left: 20px;
+        right: 16px;
+        bottom: 18px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 15px;
+        line-height: 1.4;
+        color: var(--color-text-muted);
+      }
+
+      .box {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 14px 20px;
+        border-radius: 18px;
+        border: 2px solid var(--color-border);
+        background: var(--color-surface);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .box b {
+        display: block;
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+
+      .box b.mono {
+        font-size: 22px;
+      }
+
+      .box small {
+        display: block;
+        margin-top: 6px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 16px;
+        line-height: 1.35;
+        color: var(--color-text-muted);
+      }
+
+      .box.web {
+        border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+      }
+
+      .box.rust {
+        border-color: color-mix(in srgb, var(--color-warning) 50%, transparent);
+      }
+
+      .box.store {
+        border-color: color-mix(
+          in srgb,
+          var(--color-positive) 45%,
+          transparent
+        );
+      }
+
+      .box.cloud {
+        border-style: dashed;
+        border-color: var(--color-text-muted);
+        box-shadow: none;
+      }
+
+      .box.good {
+        border-color: var(--color-positive);
+        background: var(--color-mint-soft);
+      }
+
+      .box.bad {
+        border-color: var(--color-danger);
+        background: var(--color-danger-soft);
+      }
+
+      .box.warn {
+        border-color: var(--color-warning);
+        background: var(--color-warning-soft);
+      }
+
+      .box.ink {
+        border-color: var(--color-ink);
+        background: var(--color-ink);
+        color: var(--color-text-inverse);
+      }
+
+      .box.ink small {
+        color: var(--color-primary-soft);
+      }
+
+      .box.start {
+        justify-content: flex-start;
+      }
+
+      .badge {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+        font-weight: 700;
+        background: var(--color-mint-soft);
+        color: var(--color-positive);
+      }
+
+      .badge.net {
+        background: var(--color-field);
+        color: var(--color-text-muted);
+      }
+
+      .code {
+        position: absolute;
+        padding: 24px 30px;
+        border-radius: 18px;
+        background: var(--color-ink);
+        color: var(--color-text-inverse);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 20px;
+        line-height: 1.55;
+        white-space: pre;
+        box-shadow: var(--shadow-md);
+      }
+
+      .code .c {
+        color: var(--color-text-muted);
+      }
+
+      .code .k {
+        color: var(--color-mint);
+      }
+
+      .code .s {
+        color: var(--color-primary-soft);
+      }
+
+      .code .w {
+        color: var(--color-warning);
+      }
+
+      .label {
+        position: absolute;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 17px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+      }
+
+      .note {
+        position: absolute;
+        font-size: 19px;
+        line-height: 1.4;
+        color: var(--color-text-muted);
+      }
+
+      svg.wires {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: visible;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      .wire {
+        fill: none;
+        stroke: var(--color-text-muted);
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .wire.p {
+        stroke: var(--color-primary);
+      }
+
+      .wire.r {
+        stroke: var(--color-warning);
+      }
+
+      .wire.g {
+        stroke: var(--color-positive);
+      }
+
+      .wire.bad {
+        stroke: var(--color-danger);
+        stroke-width: 6;
+      }
+
+      .wire.dash {
+        stroke-dasharray: 10 10;
+      }
+
+      .track {
+        fill: none;
+        stroke: none;
+      }
+
+      .head {
+        fill: var(--color-text-muted);
+      }
+
+      .head.p {
+        fill: var(--color-primary);
+      }
+
+      .head.r {
+        fill: var(--color-warning);
+      }
+
+      .head.g {
+        fill: var(--color-positive);
+      }
+
+      .head.bad {
+        fill: var(--color-danger);
+      }
+
+      .wl {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 17px;
+        fill: var(--color-text-muted);
+        paint-order: stroke;
+        stroke: var(--color-bg);
+        stroke-width: 8px;
+        stroke-linejoin: round;
+      }
+
+      .wl.p {
+        fill: var(--color-primary);
+      }
+
+      .wl.g {
+        fill: var(--color-positive);
+      }
+
+      .wl.bad {
+        fill: var(--color-danger);
+      }
+
+      .pk {
+        fill: var(--color-primary);
+        stroke: var(--color-surface);
+        stroke-width: 4;
+      }
+
+      .pk.g {
+        fill: var(--color-positive);
+      }
+
+      /* ---------- Escena: intro ---------- */
+
+      .intro {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 250px;
+        text-align: center;
+      }
+
+      .intro h1 {
+        font-size: 168px;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        line-height: 1;
+      }
+
+      .intro h1 span {
+        color: var(--color-mint);
+      }
+
+      .intro .q {
+        margin-top: 26px;
+        font-size: 36px;
+        color: var(--color-text-muted);
+      }
+
+      .intro .chips {
+        margin-top: 44px;
+      }
+
+      .intro .chip {
+        font-size: 24px;
+        padding: 12px 24px;
+        margin: 0 8px;
+      }
+
+      .stackline {
+        display: inline-block;
+        margin-top: 46px;
+        padding: 18px 34px;
+        border-radius: 16px;
+        background: var(--color-ink);
+        color: var(--color-text-inverse);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      .intro .go {
+        margin-top: 40px;
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--color-primary);
+      }
+
+      /* ---------- Escena: Rust (muro CSP) ---------- */
+
+      .wall {
+        position: absolute;
+        width: 34px;
+        border-radius: 10px;
+        border: 2px solid var(--color-danger);
+        background: var(--color-danger-soft);
+      }
+
+      .wall-label {
+        position: absolute;
+        writing-mode: vertical-rl;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 17px;
+        color: var(--color-danger);
+      }
+
+      .perm {
+        margin-top: auto;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 17px;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+      }
+
+      .perm strong {
+        display: block;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 16px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+
+      .cmds {
+        margin-top: 18px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 18px;
+        line-height: 1.9;
+        color: var(--color-text);
+      }
+
+      .x {
+        position: absolute;
+        font-size: 44px;
+        font-weight: 800;
+        color: var(--color-danger);
+      }
+
+      /* ---------- Escena: clic optimista ---------- */
+
+      .app-card {
+        position: absolute;
+        padding: 28px 30px;
+        border-radius: 22px;
+        background: var(--color-surface);
+        box-shadow: var(--shadow-md);
+      }
+
+      .app-card .k {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--color-text-muted);
+      }
+
+      .amount {
+        position: relative;
+        height: 70px;
+        margin-top: 6px;
+      }
+
+      .amount span {
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-size: 54px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .rows {
+        position: relative;
+        height: 210px;
+        margin-top: 22px;
+        border-top: 2px solid var(--color-border);
+      }
+
+      .row {
+        position: absolute;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        font-size: 21px;
+        font-weight: 600;
+      }
+
+      .row em {
+        font-style: normal;
+        color: var(--color-text-muted);
+      }
+
+      .toast {
+        position: absolute;
+        left: 22px;
+        right: 22px;
+        bottom: 20px;
+        padding: 14px 18px;
+        border-radius: 14px;
+        font-size: 19px;
+        font-weight: 700;
+        background: var(--color-danger-soft);
+        color: var(--color-danger);
+      }
+
+      /* ---------- Escena: voz ---------- */
+
+      .said {
+        font-size: 23px;
+        font-style: italic;
+        font-weight: 500;
+        line-height: 1.3;
+      }
+
+      /* ---------- Escena: skills ---------- */
+
+      .outro-title {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 130px;
+        text-align: center;
+      }
+
+      .outro-title h2 {
+        font-size: 64px;
+        margin: 0;
+      }
+
+      .outro-title p {
+        margin-top: 16px;
+        font-size: 28px;
+        color: var(--color-text-muted);
+      }
+
+      .card {
+        position: absolute;
+        width: 420px;
+        height: 250px;
+        padding: 26px 28px;
+        border-radius: 22px;
+        border-top: 6px solid var(--color-primary);
+        background: var(--color-surface);
+        box-shadow: var(--shadow-md);
+      }
+
+      .card.r {
+        border-top-color: var(--color-warning);
+      }
+
+      .card.g {
+        border-top-color: var(--color-positive);
+      }
+
+      .card.d {
+        border-top-color: var(--color-danger);
+      }
+
+      .card h3 {
+        font-size: 27px;
+        font-weight: 800;
+        margin-bottom: 14px;
+      }
+
+      .card li {
+        list-style: none;
+        font-size: 19px;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+      }
+
+      .footer {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 920px;
+        text-align: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--color-text);
+      }
+
+      .footer span {
+        color: var(--color-text-muted);
+        margin: 0 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage" id="stage">
+      <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+        <defs>
+          <marker
+            id="h"
+            viewBox="0 0 10 10"
+            refX="7"
+            refY="5"
+            markerWidth="5"
+            markerHeight="5"
+            orient="auto-start-reverse"
+          >
+            <path class="head" d="M0 0 L10 5 L0 10 z" />
+          </marker>
+          <marker
+            id="hp"
+            viewBox="0 0 10 10"
+            refX="7"
+            refY="5"
+            markerWidth="5"
+            markerHeight="5"
+            orient="auto-start-reverse"
+          >
+            <path class="head p" d="M0 0 L10 5 L0 10 z" />
+          </marker>
+          <marker
+            id="hr"
+            viewBox="0 0 10 10"
+            refX="7"
+            refY="5"
+            markerWidth="5"
+            markerHeight="5"
+            orient="auto-start-reverse"
+          >
+            <path class="head r" d="M0 0 L10 5 L0 10 z" />
+          </marker>
+          <marker
+            id="hg"
+            viewBox="0 0 10 10"
+            refX="7"
+            refY="5"
+            markerWidth="5"
+            markerHeight="5"
+            orient="auto-start-reverse"
+          >
+            <path class="head g" d="M0 0 L10 5 L0 10 z" />
+          </marker>
+          <marker
+            id="hbad"
+            viewBox="0 0 10 10"
+            refX="7"
+            refY="5"
+            markerWidth="4"
+            markerHeight="4"
+            orient="auto-start-reverse"
+          >
+            <path class="head bad" d="M0 0 L10 5 L0 10 z" />
+          </marker>
+        </defs>
+      </svg>
+
+      <header class="topbar">
+        <div class="wordmark">lucka<span>.</span><em>/ architecture</em></div>
+        <div class="chapter" id="chapter"></div>
+      </header>
+
+      <!-- ===== 0 · Intro ===== -->
+      <section class="scene" data-start="0" data-end="5" data-title="">
+        <div class="intro">
+          <h1 data-in="0.1">Lucka<span>.</span></h1>
+          <p class="q" data-in="0.5">
+            How much money do I have left, and where is it going?
+          </p>
+          <div class="chips" data-in="1.1">
+            <span class="chip">Desktop app · macOS + Windows</span>
+            <span class="chip mint">Local-first</span>
+            <span class="chip">No server · no account · no cloud</span>
+          </div>
+          <div class="stackline" data-in="2.0">
+            Next.js · React · TypeScript · Rust · Tauri · SQLite · whisper.cpp ·
+            llama.cpp
+          </div>
+          <p class="go" data-in="3.0">How it's built, in 100 seconds →</p>
+        </div>
+      </section>
+
+      <!-- ===== 1 · Big picture ===== -->
+      <section
+        class="scene"
+        data-start="5"
+        data-end="17"
+        data-title="01 / 08 · The big picture"
+      >
+        <div class="left">
+          <p class="eyebrow" data-in="0.1">01 · The big picture</p>
+          <h2 data-in="0.2">A web UI inside a native shell</h2>
+          <ul class="bullets">
+            <li data-in="2.2">UI in TypeScript. System access in Rust.</li>
+            <li data-in="4.6">
+              Data flows through 4 layers. Only one writes SQL.
+            </li>
+            <li data-in="7.2">The only bridge between them: Tauri IPC.</li>
+          </ul>
+        </div>
+        <div class="skills" data-in="9.0">
+          <p>What I needed</p>
+          <span class="chip">Layered architecture</span
+          ><span class="chip">Separation of concerns</span
+          ><span class="chip">IPC</span>
+        </div>
+
+        <div
+          class="group"
+          style="left: 770px; top: 150px; width: 420px; height: 700px"
+          data-in="0.5"
+        >
+          <span class="glabel">WEBVIEW · TYPESCRIPT</span>
+          <span class="gnote"
+            >+ src/lib/finance:<br />pure types, validation, math</span
+          >
+        </div>
+        <div
+          class="box web"
+          style="left: 790px; top: 195px; width: 380px; height: 100px"
+          data-in="0.8"
+        >
+          <b>React components</b><small>src/app · components/ui</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 790px; top: 340px; width: 380px; height: 100px"
+          data-in="1.1"
+        >
+          <b>FinanceProvider</b><small>optimistic state + queue</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 790px; top: 485px; width: 380px; height: 100px"
+          data-in="1.4"
+        >
+          <b>api-client</b><small>business rules · errors</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 790px; top: 630px; width: 380px; height: 100px"
+          data-in="1.7"
+        >
+          <b>local-db</b><small>the only place with SQL</small>
+        </div>
+
+        <div
+          class="group rust"
+          style="left: 1290px; top: 150px; width: 290px; height: 700px"
+          data-in="3.2"
+        >
+          <span class="glabel">RUST · TAURI</span>
+          <span class="gnote"
+            >+ plugins: dialog · fs ·<br />updater · process</span
+          >
+        </div>
+        <div
+          class="box rust"
+          style="left: 1305px; top: 485px; width: 260px; height: 100px"
+          data-in="3.6"
+        >
+          <b>Commands</b><small>voice · models · ai</small>
+        </div>
+        <div
+          class="box rust"
+          style="left: 1305px; top: 630px; width: 260px; height: 100px"
+          data-in="3.9"
+        >
+          <b class="mono">tauri-plugin-sql</b><small>+ migrations</small>
+        </div>
+
+        <div
+          class="group store"
+          style="left: 1640px; top: 150px; width: 220px; height: 700px"
+          data-in="5.0"
+        >
+          <span class="glabel">DISK · NET</span>
+        </div>
+        <div
+          class="box cloud"
+          style="left: 1655px; top: 195px; width: 190px; height: 100px"
+          data-in="5.9"
+        >
+          <b>AI APIs</b><small>opt-in · HTTPS</small>
+        </div>
+        <div
+          class="box store"
+          style="left: 1655px; top: 340px; width: 190px; height: 100px"
+          data-in="5.6"
+        >
+          <b>models/</b><small>Whisper · Qwen</small>
+        </div>
+        <div
+          class="box store"
+          style="left: 1655px; top: 485px; width: 190px; height: 100px"
+          data-in="5.4"
+        >
+          <b>OS keychain</b><small>API keys</small>
+        </div>
+        <div
+          class="box store"
+          style="left: 1655px; top: 630px; width: 190px; height: 100px"
+          data-in="5.2"
+        >
+          <b>lucka.db</b><small>SQLite file</small>
+        </div>
+
+        <svg class="wires" viewBox="0 0 1920 1080">
+          <path
+            class="wire p"
+            d="M980 297 L980 334"
+            data-draw="2.0 0.4"
+            data-head="hp"
+          />
+          <path
+            class="wire p"
+            d="M980 442 L980 479"
+            data-draw="2.2 0.4"
+            data-head="hp"
+          />
+          <path
+            class="wire p"
+            d="M980 587 L980 624"
+            data-draw="2.4 0.4"
+            data-head="hp"
+          />
+          <path
+            class="wire p"
+            d="M1172 535 L1298 535"
+            data-draw="4.3 0.6"
+            data-head="hp"
+          />
+          <text
+            class="wl p"
+            x="1235"
+            y="520"
+            text-anchor="middle"
+            data-in="4.6"
+          >
+            invoke()
+          </text>
+          <path
+            class="wire r"
+            d="M1172 680 L1298 680"
+            data-draw="4.4 0.6"
+            data-head="hr"
+          />
+          <text class="wl" x="1235" y="665" text-anchor="middle" data-in="4.7">
+            SQL
+          </text>
+          <path
+            class="wire r"
+            d="M1567 680 L1648 680"
+            data-draw="5.4 0.4"
+            data-head="hr"
+          />
+          <path
+            class="wire r"
+            d="M1567 535 L1648 535"
+            data-draw="5.6 0.4"
+            data-head="hr"
+          />
+          <path
+            class="wire r"
+            d="M1567 512 C1610 512 1610 390 1648 390"
+            data-draw="5.8 0.5"
+            data-head="hr"
+          />
+          <path
+            class="wire r dash"
+            d="M1567 498 C1600 498 1600 245 1648 245"
+            data-in="6.1"
+            data-flow
+          />
+          <path class="track" id="t-big-1" d="M980 245 L980 680 L1640 680" />
+          <path
+            class="track"
+            id="t-big-2"
+            d="M980 535 L1435 535 C1600 535 1600 245 1640 245"
+          />
+          <circle class="pk" r="11" data-move="7.0 3.2" data-track="t-big-1" />
+          <circle
+            class="pk g"
+            r="11"
+            data-move="9.4 2.2"
+            data-track="t-big-2"
+          />
+        </svg>
+      </section>
+
+      <!-- ===== 2 · Why JavaScript ===== -->
+      <section
+        class="scene"
+        data-start="17"
+        data-end="27"
+        data-title="02 / 08 · Why JavaScript"
+      >
+        <div class="left">
+          <p class="eyebrow" data-in="0.1">02 · Why JavaScript</p>
+          <h2 data-in="0.2">Reuse a web app I already had</h2>
+          <ul class="bullets">
+            <li data-in="1.6">Lucka began as a Next.js + Supabase web app.</li>
+            <li data-in="4.0">
+              I replaced the backend, not the UI: same api-client API.
+            </li>
+            <li data-in="6.6">
+              <code>output: 'export'</code> → static files. No server at
+              runtime.
+            </li>
+          </ul>
+        </div>
+        <div class="skills" data-in="8.0">
+          <p>What I needed</p>
+          <span class="chip">React 19</span><span class="chip">Next.js 16</span
+          ><span class="chip">TypeScript strict</span
+          ><span class="chip">CSS Modules</span>
+        </div>
+
+        <p class="label" style="left: 800px; top: 165px" data-in="0.5">
+          Before · web app
+        </p>
+        <div
+          class="box web"
+          style="left: 800px; top: 205px; width: 380px; height: 100px"
+          data-in="0.7"
+        >
+          <b>React UI</b><small>components</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 800px; top: 355px; width: 380px; height: 100px"
+          data-in="0.9"
+        >
+          <b>api-client</b><small>createFinanceApi()</small>
+        </div>
+        <div
+          class="box cloud"
+          style="left: 800px; top: 505px; width: 380px; height: 120px"
+          data-in="1.1"
+        >
+          <b>Supabase</b><small>Postgres · auth · E2E encryption</small>
+        </div>
+
+        <p class="label" style="left: 1440px; top: 165px" data-in="3.4">
+          After · desktop app
+        </p>
+        <div
+          class="box web"
+          style="left: 1440px; top: 205px; width: 400px; height: 100px"
+          data-in="3.6"
+        >
+          <span class="badge">same</span><b>React UI</b
+          ><small>components</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 1440px; top: 355px; width: 400px; height: 100px"
+          data-in="3.9"
+        >
+          <span class="badge">same API</span><b>api-client</b
+          ><small>createFinanceApi()</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 1440px; top: 505px; width: 400px; height: 100px"
+          data-in="4.3"
+        >
+          <b>local-db</b><small>SQL via tauri-plugin-sql</small>
+        </div>
+        <div
+          class="box store"
+          style="left: 1440px; top: 650px; width: 400px; height: 100px"
+          data-in="4.7"
+        >
+          <b>lucka.db</b><small>one SQLite file on disk</small>
+        </div>
+
+        <div
+          class="box ink"
+          style="left: 800px; top: 820px; width: 290px; height: 76px"
+          data-in="6.6"
+        >
+          <b class="mono">next build</b>
+        </div>
+        <div
+          class="box ink"
+          style="left: 1150px; top: 820px; width: 330px; height: 76px"
+          data-in="6.9"
+        >
+          <b class="mono">out/</b><small>static HTML · JS · CSS</small>
+        </div>
+        <div
+          class="box ink"
+          style="left: 1540px; top: 820px; width: 300px; height: 76px"
+          data-in="7.2"
+        >
+          <b>Tauri window</b><small>serves the files</small>
+        </div>
+
+        <svg class="wires" viewBox="0 0 1920 1080">
+          <path
+            class="wire p"
+            d="M990 307 L990 349"
+            data-draw="0.9 0.3"
+            data-head="hp"
+          />
+          <path class="wire dash" d="M990 457 L990 499" data-in="1.2" />
+          <path class="wire bad" d="M812 515 L1168 615" data-draw="2.6 0.4" />
+          <path class="wire bad" d="M1168 515 L812 615" data-draw="2.8 0.4" />
+          <text
+            class="wl bad"
+            x="990"
+            y="660"
+            text-anchor="middle"
+            data-in="3.0"
+          >
+            removed
+          </text>
+          <path
+            class="wire p"
+            d="M1205 405 L1415 405"
+            data-draw="3.2 0.5"
+            data-head="hp"
+          />
+          <text
+            class="wl p"
+            x="1310"
+            y="390"
+            text-anchor="middle"
+            data-in="3.4"
+          >
+            port
+          </text>
+          <path
+            class="wire p"
+            d="M1640 307 L1640 349"
+            data-draw="3.9 0.3"
+            data-head="hp"
+          />
+          <path
+            class="wire p"
+            d="M1640 457 L1640 499"
+            data-draw="4.3 0.3"
+            data-head="hp"
+          />
+          <path
+            class="wire r"
+            d="M1640 607 L1640 644"
+            data-draw="4.7 0.3"
+            data-head="hr"
+          />
+          <path
+            class="wire"
+            d="M1092 858 L1144 858"
+            data-draw="6.9 0.3"
+            data-head="h"
+          />
+          <path
+            class="wire"
+            d="M1482 858 L1534 858"
+            data-draw="7.2 0.3"
+            data-head="h"
+          />
+        </svg>
+      </section>
+
+      <!-- ===== 3 · Why Rust ===== -->
+      <section
+        class="scene"
+        data-start="27"
+        data-end="38"
+        data-title="03 / 08 · Why Rust"
+      >
+        <div class="left">
+          <p class="eyebrow" data-in="0.1">03 · Why Rust (Tauri v2)</p>
+          <h2 data-in="0.2">Native power, small and sandboxed</h2>
+          <ul class="bullets">
+            <li data-in="1.6">Uses the OS webview. No bundled browser.</li>
+            <li data-in="4.0">
+              Rust reaches what the web can't: mic, keychain, native AI.
+            </li>
+            <li data-in="6.6">
+              CSP allows only IPC. Every network call goes through Rust.
+            </li>
+          </ul>
+        </div>
+        <div class="skills" data-in="8.6">
+          <p>What I needed</p>
+          <span class="chip">Rust</span><span class="chip">Tauri v2</span
+          ><span class="chip">CSP &amp; sandboxing</span
+          ><span class="chip">Least privilege</span>
+        </div>
+
+        <div
+          class="box web start"
+          style="left: 790px; top: 200px; width: 370px; height: 600px"
+          data-in="0.5"
+        >
+          <b>Webview</b><small>Next.js static export</small>
+          <div class="perm">
+            <strong>Allowed permissions</strong>
+            sql · dialog<br />fs (backup file only)<br />updater · process
+          </div>
+        </div>
+
+        <div
+          class="wall"
+          style="left: 1190px; top: 190px; height: 205px"
+          data-in="1.4"
+        ></div>
+        <div
+          class="wall"
+          style="left: 1190px; top: 475px; height: 335px"
+          data-in="1.4"
+        ></div>
+        <span class="wall-label" style="left: 1196px; top: 560px" data-in="1.6"
+          >CSP · connect-src ipc:</span
+        >
+
+        <div
+          class="box rust start"
+          style="left: 1300px; top: 200px; width: 540px; height: 260px"
+          data-in="2.2"
+        >
+          <b>Rust commands</b
+          ><small>Result&lt;T, String&gt; · readable errors</small>
+          <div class="cmds">
+            voice_start · voice_stop · voice_check_mic<br />
+            models_status · model_download · model_delete<br />
+            ai_save_key · ai_delete_key · ai_interpret
+          </div>
+        </div>
+
+        <div
+          class="box rust"
+          style="left: 1300px; top: 562px; width: 264px; height: 72px"
+          data-in="4.2"
+        >
+          <b class="mono">cpal</b><small>microphone capture</small>
+        </div>
+        <div
+          class="box rust"
+          style="left: 1576px; top: 562px; width: 264px; height: 72px"
+          data-in="4.4"
+        >
+          <b class="mono">keyring</b><small>OS keychain</small>
+        </div>
+        <div
+          class="box rust"
+          style="left: 1300px; top: 646px; width: 264px; height: 72px"
+          data-in="4.6"
+        >
+          <b class="mono">whisper-rs</b><small>speech → text</small>
+        </div>
+        <div
+          class="box rust"
+          style="left: 1576px; top: 646px; width: 264px; height: 72px"
+          data-in="4.8"
+        >
+          <b class="mono">llama-cpp-2</b><small>text → JSON</small>
+        </div>
+        <div
+          class="box rust"
+          style="left: 1300px; top: 730px; width: 264px; height: 72px"
+          data-in="5.0"
+        >
+          <b class="mono">reqwest</b><small>HTTPS to AI APIs</small>
+        </div>
+        <div
+          class="box rust"
+          style="left: 1576px; top: 730px; width: 264px; height: 72px"
+          data-in="5.2"
+        >
+          <b class="mono">tauri-plugin-sql</b><small>SQLite + migrations</small>
+        </div>
+
+        <svg class="wires" viewBox="0 0 1920 1080">
+          <text class="wl g" x="820" y="405" data-in="2.8">
+            invoke("ai_interpret")
+          </text>
+          <path
+            class="wire g"
+            d="M820 425 L1292 425"
+            data-draw="2.9 0.8"
+            data-head="hg"
+          />
+          <text class="wl bad" x="820" y="305" data-in="6.6">
+            fetch("https://…")
+          </text>
+          <path
+            class="wire bad"
+            d="M820 325 L1180 325"
+            data-draw="6.7 0.6"
+            data-head="hbad"
+          />
+          <text class="wl bad" x="820" y="360" data-in="7.4">
+            ✕ blocked by CSP
+          </text>
+          <path class="track" id="t-rust" d="M820 425 L1300 425 L1420 425" />
+          <circle class="pk g" r="11" data-move="3.6 1.4" data-track="t-rust" />
+        </svg>
+      </section>
+
+      <!-- ===== 4 · Data ===== -->
+      <section
+        class="scene"
+        data-start="38"
+        data-end="49"
+        data-title="04 / 08 · Where the data lives"
+      >
+        <div class="left">
+          <p class="eyebrow" data-in="0.1">04 · Where the data lives</p>
+          <h2 data-in="0.2">One SQLite file. The database guards the rules.</h2>
+          <ul class="bullets">
+            <li data-in="1.6">One file per computer. Nothing in the cloud.</li>
+            <li data-in="4.0">
+              CHECK constraints and partial unique indexes enforce the rules.
+            </li>
+            <li data-in="6.6">
+              Migrations run on startup. Published ones are never edited.
+            </li>
+          </ul>
+        </div>
+        <div class="skills" data-in="8.6">
+          <p>What I needed</p>
+          <span class="chip">SQL schema design</span
+          ><span class="chip">Migrations</span
+          ><span class="chip">Data integrity</span>
+        </div>
+
+        <pre
+          class="code"
+          style="left: 800px; top: 175px; width: 1040px"
+          data-in="0.5"
+        ><span class="c">macOS  </span>  ~/Library/Application Support/dev.juanramirez.lucka/<span class="k">lucka.db</span>
+<span class="c">Windows</span>  %APPDATA%\dev.juanramirez.lucka\<span class="k">lucka.db</span></pre>
+
+        <div
+          class="box store"
+          style="left: 800px; top: 340px; width: 300px; height: 80px"
+          data-in="1.8"
+        >
+          <b class="mono">fixed_expenses</b><small>rent, internet…</small>
+        </div>
+        <div
+          class="box store"
+          style="left: 1170px; top: 340px; width: 300px; height: 80px"
+          data-in="2.0"
+        >
+          <b class="mono">expenses</b><small>every purchase</small>
+        </div>
+        <div
+          class="box store"
+          style="left: 1540px; top: 340px; width: 300px; height: 80px"
+          data-in="2.2"
+        >
+          <b class="mono">categories</b><small>budgets</small>
+        </div>
+        <div
+          class="box"
+          style="left: 800px; top: 465px; width: 245px; height: 72px"
+          data-in="3.0"
+        >
+          <b class="mono">finance_settings</b><small>1 row</small>
+        </div>
+        <div
+          class="box"
+          style="left: 1065px; top: 465px; width: 245px; height: 72px"
+          data-in="3.1"
+        >
+          <b class="mono">incomes</b><small>extra income</small>
+        </div>
+        <div
+          class="box"
+          style="left: 1330px; top: 465px; width: 245px; height: 72px"
+          data-in="3.2"
+        >
+          <b class="mono">investments</b><small>1 row</small>
+        </div>
+        <div
+          class="box"
+          style="left: 1595px; top: 465px; width: 245px; height: 72px"
+          data-in="3.3"
+        >
+          <b class="mono">ai_providers</b><small>no API keys</small>
+        </div>
+
+        <pre
+          class="code"
+          style="left: 800px; top: 570px; width: 1040px"
+          data-in="4.2"
+        ><span class="c">-- an expense pays a fixed expense OR counts against a category</span>
+<span class="k">CHECK</span> ((fixed_expense_id <span class="k">IS NULL</span>) &lt;&gt; (category_id <span class="k">IS NULL</span>))
+
+<span class="c">-- at most one default AI</span>
+<span class="k">CREATE UNIQUE INDEX</span> ai_providers_one_default
+  <span class="k">ON</span> ai_providers (is_default) <span class="k">WHERE</span> is_default = <span class="w">1</span>;</pre>
+
+        <div
+          class="box"
+          style="left: 800px; top: 840px; width: 333px; height: 64px"
+          data-in="6.8"
+        >
+          <small>migrations run on open</small>
+        </div>
+        <div
+          class="box warn"
+          style="left: 1153px; top: 840px; width: 333px; height: 64px"
+          data-in="7.4"
+        >
+          <small>no transactions → manual undo</small>
+        </div>
+        <div
+          class="box"
+          style="left: 1506px; top: 840px; width: 334px; height: 64px"
+          data-in="8.0"
+        >
+          <small>backup: JSON export / import</small>
+        </div>
+
+        <svg class="wires" viewBox="0 0 1920 1080">
+          <path
+            class="wire g"
+            d="M1168 380 L1108 380"
+            data-draw="2.4 0.4"
+            data-head="hg"
+          />
+          <path
+            class="wire g"
+            d="M1472 380 L1532 380"
+            data-draw="2.4 0.4"
+            data-head="hg"
+          />
+          <text
+            class="wl g"
+            x="1138"
+            y="365"
+            text-anchor="middle"
+            data-in="2.6"
+          >
+            OR
+          </text>
+          <text
+            class="wl g"
+            x="1502"
+            y="365"
+            text-anchor="middle"
+            data-in="2.6"
+          >
+            OR
+          </text>
+        </svg>
+      </section>
+
+      <!-- ===== 5 · Optimistic click ===== -->
+      <section
+        class="scene"
+        data-start="49"
+        data-end="59"
+        data-title="05 / 08 · One click, end to end"
+      >
+        <div class="left">
+          <p class="eyebrow" data-in="0.1">05 · One click, end to end</p>
+          <h2 data-in="0.2">Optimistic UI with rollback</h2>
+          <ul class="bullets">
+            <li data-in="1.4">
+              The screen updates first. SQLite writes after.
+            </li>
+            <li data-in="3.6">
+              Actions run in a promise queue, so fast clicks never race.
+            </li>
+            <li data-in="6.2">
+              If the write fails, the previous snapshot comes back.
+            </li>
+          </ul>
+        </div>
+        <div class="skills" data-in="8.0">
+          <p>What I needed</p>
+          <span class="chip">React state</span
+          ><span class="chip">Async &amp; concurrency</span
+          ><span class="chip">UX under failure</span>
+        </div>
+
+        <div
+          class="app-card"
+          style="left: 800px; top: 195px; width: 380px; height: 480px"
+          data-in="0.5"
+        >
+          <p class="k">Available until payday</p>
+          <div class="amount">
+            <span data-show="0 2.2">$1.240.000</span>
+            <span data-show="2.2 6.6">$1.225.000</span>
+            <span data-show="6.6 8.4">$1.202.000</span>
+            <span data-show="8.4">$1.225.000</span>
+          </div>
+          <p class="k">12 days left</p>
+          <div class="rows">
+            <div class="row" style="top: 20px" data-show="6.6 8.4">
+              <span>Taxi</span><em>−$23.000</em>
+            </div>
+            <div class="row" style="top: 66px" data-show="2.2">
+              <span>Coffee</span><em>−$15.000</em>
+            </div>
+            <div class="row" style="top: 112px">
+              <span>Market</span><em>−$45.000</em>
+            </div>
+            <div class="row" style="top: 158px">
+              <span>Internet</span><em>−$90.000</em>
+            </div>
+          </div>
+          <div class="toast" data-show="8.4">
+            Couldn't save. Changes reverted.
+          </div>
+        </div>
+
+        <pre
+          class="code"
+          style="
+            left: 1230px;
+            top: 195px;
+            width: 610px;
+            height: 480px;
+            font-size: 19px;
+          "
+          data-in="0.9"
+        ><span class="c">// simplified from finance-provider.tsx</span>
+<span class="k">function</span> run(plan) {
+  queue = queue.then(<span class="k">async</span> () =&gt; {
+    <span class="k">const</span> prev = snapshot.current
+    <span class="k">const</span> { next, save } = plan(prev)
+    show(next)        <span class="c">// optimistic</span>
+    <span class="k">try</span> {
+      <span class="k">await</span> save(api)
+    } <span class="k">catch</span> {
+      show(prev)      <span class="c">// rollback</span>
+    }
+  })
+}</pre>
+
+        <div
+          class="box"
+          style="left: 800px; top: 720px; width: 230px; height: 76px"
+          data-in="1.8"
+        >
+          <b>Tap “Coffee”</b>
+        </div>
+        <div
+          class="box web"
+          style="left: 1070px; top: 720px; width: 230px; height: 76px"
+          data-in="2.2"
+        >
+          <b>UI updates</b><small>instantly</small>
+        </div>
+        <div
+          class="box rust"
+          style="left: 1340px; top: 720px; width: 230px; height: 76px"
+          data-in="2.8"
+        >
+          <b class="mono">save(api)</b><small>→ SQLite</small>
+        </div>
+        <div
+          class="box good"
+          style="left: 1610px; top: 720px; width: 230px; height: 76px"
+          data-in="3.6"
+        >
+          <b>✓ Saved</b>
+        </div>
+
+        <div
+          class="box"
+          style="left: 800px; top: 830px; width: 230px; height: 76px"
+          data-in="6.2"
+        >
+          <b>Tap “Taxi”</b>
+        </div>
+        <div
+          class="box web"
+          style="left: 1070px; top: 830px; width: 230px; height: 76px"
+          data-in="6.6"
+        >
+          <b>UI updates</b><small>instantly</small>
+        </div>
+        <div
+          class="box bad"
+          style="left: 1340px; top: 830px; width: 230px; height: 76px"
+          data-in="7.4"
+        >
+          <b>✕ Write fails</b>
+        </div>
+        <div
+          class="box warn"
+          style="left: 1610px; top: 830px; width: 230px; height: 76px"
+          data-in="8.2"
+        >
+          <b>↺ Rolled back</b><small>to the snapshot</small>
+        </div>
+
+        <svg class="wires" viewBox="0 0 1920 1080">
+          <path
+            class="wire"
+            d="M1032 758 L1064 758"
+            data-draw="2.1 0.2"
+            data-head="h"
+          />
+          <path
+            class="wire"
+            d="M1302 758 L1334 758"
+            data-draw="2.7 0.2"
+            data-head="h"
+          />
+          <path
+            class="wire"
+            d="M1572 758 L1604 758"
+            data-draw="3.5 0.2"
+            data-head="h"
+          />
+          <path
+            class="wire"
+            d="M1032 868 L1064 868"
+            data-draw="6.5 0.2"
+            data-head="h"
+          />
+          <path
+            class="wire"
+            d="M1302 868 L1334 868"
+            data-draw="7.3 0.2"
+            data-head="h"
+          />
+          <path
+            class="wire"
+            d="M1572 868 L1604 868"
+            data-draw="8.1 0.2"
+            data-head="h"
+          />
+        </svg>
+      </section>
+
+      <!-- ===== 6 · Voice ===== -->
+      <section
+        class="scene"
+        data-start="59"
+        data-end="73"
+        data-title="06 / 08 · Voice + local AI"
+      >
+        <div class="left">
+          <p class="eyebrow" data-in="0.1">06 · Voice entry + local AI</p>
+          <h2 data-in="0.2">Speak. AI fills the form. You confirm.</h2>
+          <ul class="bullets">
+            <li data-in="1.6">
+              Whisper transcribes on the device. Audio never leaves.
+            </li>
+            <li data-in="5.0">One prompt + one JSON schema → 4 AI backends.</li>
+            <li data-in="8.6">
+              AI output is untrusted: validated, mapped to real ids, reviewed.
+            </li>
+          </ul>
+        </div>
+        <div class="why" data-in="11.0">
+          <p>Why local models?</p>
+          <span class="chip mint">Private</span
+          ><span class="chip mint">Works offline</span
+          ><span class="chip mint">No cost per use</span>
+        </div>
+        <div class="skills" data-in="12.0">
+          <p>What I needed</p>
+          <span class="chip">whisper.cpp</span
+          ><span class="chip">llama.cpp + GBNF</span
+          ><span class="chip">Structured outputs</span
+          ><span class="chip">Audio resampling</span>
+        </div>
+
+        <div
+          class="box rust"
+          style="left: 800px; top: 185px; width: 300px; height: 96px"
+          data-in="0.5"
+        >
+          <span class="badge">on device</span><b>Microphone</b
+          ><small>cpal · own thread</small>
+        </div>
+        <div
+          class="box rust"
+          style="left: 1170px; top: 185px; width: 300px; height: 96px"
+          data-in="0.8"
+        >
+          <b>Mono · 16 kHz</b><small>mix + resample</small>
+        </div>
+        <div
+          class="box rust"
+          style="left: 1540px; top: 185px; width: 300px; height: 96px"
+          data-in="1.1"
+        >
+          <span class="badge">on device</span><b>Whisper small</b
+          ><small>whisper.cpp · Metal</small>
+        </div>
+        <div
+          class="box"
+          style="left: 1170px; top: 316px; width: 670px; height: 96px"
+          data-in="2.9"
+        >
+          <p class="said">“ayer gasté 15 mil en café y pagué el internet”</p>
+          <small>yesterday I spent 15k on coffee and paid the internet</small>
+        </div>
+
+        <div
+          class="box rust"
+          style="left: 800px; top: 470px; width: 290px; height: 150px"
+          data-in="4.2"
+        >
+          <b class="mono">ai_interpret</b
+          ><small>text + today + category names + pending fixed</small>
+        </div>
+        <div
+          class="box good"
+          style="left: 1150px; top: 440px; width: 420px; height: 96px"
+          data-in="5.0"
+        >
+          <span class="badge">on device</span><b>Qwen 2.5 3B</b
+          ><small>llama.cpp · schema → GBNF grammar</small>
+        </div>
+        <div
+          class="box cloud"
+          style="left: 1150px; top: 556px; width: 420px; height: 96px"
+          data-in="5.6"
+        >
+          <b>OpenAI · Anthropic · Gemini</b
+          ><small>opt-in · same schema, strict</small>
+        </div>
+        <div
+          class="box ink"
+          style="left: 1630px; top: 495px; width: 210px; height: 100px"
+          data-in="6.6"
+        >
+          <b class="mono">JSON</b><small>shape not trusted</small>
+        </div>
+
+        <div
+          class="box web"
+          style="left: 800px; top: 720px; width: 230px; height: 96px"
+          data-in="8.4"
+        >
+          <b class="mono">resolve.ts</b><small>names → ids</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 1070px; top: 720px; width: 230px; height: 96px"
+          data-in="8.8"
+        >
+          <b>Review</b><small>user edits, confirms</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 1340px; top: 720px; width: 230px; height: 96px"
+          data-in="9.2"
+        >
+          <b class="mono">addMany</b><small>all or nothing</small>
+        </div>
+        <div
+          class="box store"
+          style="left: 1610px; top: 720px; width: 230px; height: 96px"
+          data-in="9.6"
+        >
+          <b>lucka.db</b><small>saved</small>
+        </div>
+        <p
+          class="note"
+          style="left: 800px; top: 850px; width: 1040px"
+          data-in="10.2"
+        >
+          Models download with a pinned SHA-256 · API keys live in the OS
+          keychain, never in SQLite
+        </p>
+
+        <svg class="wires" viewBox="0 0 1920 1080">
+          <path
+            class="wire r"
+            d="M1102 233 L1164 233"
+            data-draw="0.8 0.3"
+            data-head="hr"
+          />
+          <path
+            class="wire r"
+            d="M1472 233 L1534 233"
+            data-draw="1.1 0.3"
+            data-head="hr"
+          />
+          <path
+            class="wire r"
+            d="M1690 283 L1690 310"
+            data-draw="2.7 0.2"
+            data-head="hr"
+          />
+          <path
+            class="wire r"
+            d="M1168 364 C945 364 945 400 945 464"
+            data-draw="3.8 0.5"
+            data-head="hr"
+          />
+          <path
+            class="wire g"
+            d="M1092 520 C1122 520 1122 488 1144 488"
+            data-draw="5.0 0.3"
+            data-head="hg"
+          />
+          <path
+            class="wire dash"
+            d="M1092 570 C1122 570 1122 604 1144 604"
+            data-in="5.6"
+            data-flow
+          />
+          <path
+            class="wire g"
+            d="M1572 488 C1602 488 1602 528 1624 528"
+            data-draw="6.4 0.3"
+            data-head="hg"
+          />
+          <path
+            class="wire dash"
+            d="M1572 604 C1602 604 1602 564 1624 564"
+            data-in="6.6"
+            data-flow
+          />
+          <path
+            class="wire p"
+            d="M1735 597 L1735 670 Q1735 690 1715 690 L935 690 Q915 690 915 710 L915 714"
+            data-draw="7.8 0.6"
+            data-head="hp"
+          />
+          <path
+            class="wire p"
+            d="M1032 768 L1064 768"
+            data-draw="8.7 0.2"
+            data-head="hp"
+          />
+          <path
+            class="wire p"
+            d="M1302 768 L1334 768"
+            data-draw="9.1 0.2"
+            data-head="hp"
+          />
+          <path
+            class="wire p"
+            d="M1572 768 L1604 768"
+            data-draw="9.5 0.2"
+            data-head="hp"
+          />
+          <path class="track" id="t-voice-1" d="M950 233 L1690 233" />
+          <path
+            class="track"
+            id="t-voice-2"
+            d="M945 545 L1120 545 C1135 545 1135 488 1150 488 L1570 488 C1602 488 1602 545 1735 545"
+          />
+          <path class="track" id="t-voice-3" d="M915 768 L1725 768" />
+          <circle
+            class="pk"
+            r="11"
+            data-move="1.2 1.6"
+            data-track="t-voice-1"
+          />
+          <circle
+            class="pk g"
+            r="11"
+            data-move="6.0 1.6"
+            data-track="t-voice-2"
+          />
+          <circle
+            class="pk"
+            r="11"
+            data-move="10.0 1.8"
+            data-track="t-voice-3"
+          />
+        </svg>
+      </section>
+
+      <!-- ===== 7 · Native ===== -->
+      <section
+        class="scene"
+        data-start="73"
+        data-end="83"
+        data-title="07 / 08 · Shipping native AI"
+      >
+        <div class="left">
+          <p class="eyebrow" data-in="0.1">07 · Shipping native AI</p>
+          <h2 data-in="0.2">Two AI engines, one binary, one conflict</h2>
+          <ul class="bullets">
+            <li data-in="1.2">
+              whisper.cpp and llama.cpp both embed ggml → duplicate symbols.
+            </li>
+            <li data-in="4.2">
+              Fix: Whisper static, llama.cpp as dynamic libraries.
+            </li>
+            <li data-in="6.6">
+              CI builds macOS + Windows and runs the app for 15 s.
+            </li>
+          </ul>
+        </div>
+        <div class="skills" data-in="8.0">
+          <p>What I needed</p>
+          <span class="chip">Native linking</span
+          ><span class="chip">Cargo build scripts</span
+          ><span class="chip">lipo · rpath</span
+          ><span class="chip">Entitlements</span>
+        </div>
+
+        <div data-in="0.4" data-out="3.8">
+          <div
+            class="box rust"
+            style="left: 800px; top: 220px; width: 330px; height: 110px"
+          >
+            <span class="badge">ggml</span><b>whisper.cpp</b
+            ><small>speech → text</small>
+          </div>
+          <div
+            class="box rust"
+            style="left: 800px; top: 380px; width: 330px; height: 110px"
+          >
+            <span class="badge">ggml</span><b>llama.cpp</b
+            ><small>text → JSON</small>
+          </div>
+          <div
+            class="box ink"
+            style="left: 1300px; top: 300px; width: 300px; height: 110px"
+          >
+            <b class="mono">lucka</b><small>one binary</small>
+          </div>
+          <div
+            class="box bad mono"
+            style="left: 1300px; top: 450px; width: 540px; height: 76px"
+            data-in="1.4"
+          >
+            <b class="mono">✕ duplicate ggml_* symbols</b>
+          </div>
+          <svg class="wires" viewBox="0 0 1920 1080">
+            <path
+              class="wire r"
+              d="M1132 275 C1220 275 1210 335 1294 335"
+              data-draw="0.8 0.4"
+              data-head="hr"
+            />
+            <path
+              class="wire r"
+              d="M1132 435 C1220 435 1210 375 1294 375"
+              data-draw="0.8 0.4"
+              data-head="hr"
+            />
+          </svg>
+        </div>
+
+        <pre
+          class="code"
+          style="left: 800px; top: 190px; width: 1040px"
+          data-in="4.0"
+        >Lucka.app/Contents/
+├─ MacOS/lucka                <span class="k">← whisper.cpp, static</span>
+└─ Frameworks/
+   ├─ libllama.0.dylib        <span class="w">← llama.cpp, dynamic</span>
+   ├─ libggml.0.dylib
+   └─ libggml-metal.0.dylib   <span class="c">…</span></pre>
+
+        <div
+          class="box"
+          style="left: 800px; top: 480px; width: 510px; height: 100px"
+          data-in="5.0"
+        >
+          <b class="mono">lipo</b
+          ><small>arm64 + x86_64 → one universal app</small>
+        </div>
+        <div
+          class="box"
+          style="left: 1330px; top: 480px; width: 510px; height: 100px"
+          data-in="5.4"
+        >
+          <b>rpath + entitlements</b
+          ><small>../Frameworks · audio-input · library validation</small>
+        </div>
+        <div
+          class="box"
+          style="left: 800px; top: 600px; width: 510px; height: 100px"
+          data-in="5.8"
+        >
+          <b>Windows</b><small>llama DLLs ship next to the .exe</small>
+        </div>
+        <div
+          class="box good"
+          style="left: 1330px; top: 600px; width: 510px; height: 100px"
+          data-in="6.6"
+        >
+          <b class="mono">build-check.yml</b
+          ><small>real builds · launch 15 s · fail on crash</small>
+        </div>
+      </section>
+
+      <!-- ===== 8 · Quality ===== -->
+      <section
+        class="scene"
+        data-start="83"
+        data-end="93"
+        data-title="08 / 08 · Guardrails &amp; releases"
+      >
+        <div class="left">
+          <p class="eyebrow" data-in="0.1">08 · Guardrails &amp; releases</p>
+          <h2 data-in="0.2">Rules enforced by tools, not memory</h2>
+          <ul class="bullets">
+            <li data-in="1.2">
+              Same rule checked 3 times: edit, commit, merge.
+            </li>
+            <li data-in="3.8">
+              Built with Claude Code. Hooks block what AGENTS.md forbids.
+            </li>
+            <li data-in="6.2">
+              Merge a new version → builds → signed auto-update.
+            </li>
+          </ul>
+        </div>
+        <div class="skills" data-in="8.0">
+          <p>What I needed</p>
+          <span class="chip">GitHub Actions</span
+          ><span class="chip">Custom ESLint rules</span
+          ><span class="chip">CI/CD</span
+          ><span class="chip">AI-assisted dev</span>
+        </div>
+
+        <div
+          class="box web"
+          style="left: 800px; top: 200px; width: 260px; height: 110px"
+          data-in="0.5"
+        >
+          <b>Claude Code hooks</b><small>while editing</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 1090px; top: 200px; width: 260px; height: 110px"
+          data-in="0.8"
+        >
+          <b>Git hooks</b><small>pre-commit · pre-push</small>
+        </div>
+        <div
+          class="box web"
+          style="left: 1380px; top: 200px; width: 260px; height: 110px"
+          data-in="1.1"
+        >
+          <b>CI</b><small>lint · types · tests</small>
+        </div>
+        <div
+          class="box ink"
+          style="left: 1690px; top: 200px; width: 150px; height: 110px"
+          data-in="1.4"
+        >
+          <b class="mono">main</b>
+        </div>
+        <p
+          class="note mono"
+          style="left: 800px; top: 330px; font-size: 17px"
+          data-in="2.6"
+        >
+          e.g. "no literal colors" is blocked at all three layers
+        </p>
+
+        <p class="label" style="left: 800px; top: 420px" data-in="4.4">
+          release.yml
+        </p>
+        <div
+          class="box"
+          style="left: 800px; top: 455px; width: 230px; height: 90px"
+          data-in="4.6"
+        >
+          <b>Merge to main</b>
+        </div>
+        <div
+          class="box"
+          style="left: 1070px; top: 455px; width: 230px; height: 90px"
+          data-in="4.8"
+        >
+          <b class="mono">ci.yml</b><small>all checks</small>
+        </div>
+        <div
+          class="box"
+          style="left: 1340px; top: 455px; width: 230px; height: 90px"
+          data-in="5.0"
+        >
+          <b>New version?</b><small>no tag yet</small>
+        </div>
+        <div
+          class="box"
+          style="left: 1610px; top: 455px; width: 230px; height: 90px"
+          data-in="5.2"
+        >
+          <b>Draft release</b>
+        </div>
+        <div
+          class="box rust"
+          style="left: 800px; top: 620px; width: 300px; height: 76px"
+          data-in="5.8"
+        >
+          <b>macOS universal</b>
+        </div>
+        <div
+          class="box rust"
+          style="left: 800px; top: 712px; width: 300px; height: 76px"
+          data-in="5.9"
+        >
+          <b>Windows x64</b>
+        </div>
+        <div
+          class="box"
+          style="left: 1180px; top: 645px; width: 300px; height: 120px"
+          data-in="6.4"
+        >
+          <b>Publish</b><small>make_latest · latest.json</small>
+        </div>
+        <div
+          class="box good"
+          style="left: 1540px; top: 645px; width: 300px; height: 120px"
+          data-in="6.8"
+        >
+          <b>Apps auto-update</b><small>minisign-verified</small>
+        </div>
+
+        <svg class="wires" viewBox="0 0 1920 1080">
+          <path
+            class="wire p"
+            d="M1062 255 L1084 255"
+            data-draw="0.8 0.2"
+            data-head="hp"
+          />
+          <path
+            class="wire p"
+            d="M1352 255 L1374 255"
+            data-draw="1.1 0.2"
+            data-head="hp"
+          />
+          <path
+            class="wire p"
+            d="M1642 255 L1684 255"
+            data-draw="1.4 0.2"
+            data-head="hp"
+          />
+          <path
+            class="wire"
+            d="M1032 500 L1064 500"
+            data-draw="4.8 0.2"
+            data-head="h"
+          />
+          <path
+            class="wire"
+            d="M1302 500 L1334 500"
+            data-draw="5.0 0.2"
+            data-head="h"
+          />
+          <path
+            class="wire"
+            d="M1572 500 L1604 500"
+            data-draw="5.2 0.2"
+            data-head="h"
+          />
+          <path
+            class="wire"
+            d="M1725 547 C1725 590 950 570 950 614"
+            data-draw="5.4 0.4"
+            data-head="h"
+          />
+          <path
+            class="wire r"
+            d="M1102 658 L1174 690"
+            data-draw="6.2 0.2"
+            data-head="hr"
+          />
+          <path
+            class="wire r"
+            d="M1102 750 L1174 720"
+            data-draw="6.2 0.2"
+            data-head="hr"
+          />
+          <path
+            class="wire g"
+            d="M1482 705 L1534 705"
+            data-draw="6.7 0.2"
+            data-head="hg"
+          />
+          <path class="track" id="t-gates" d="M790 255 L1770 255" />
+          <circle class="pk" r="11" data-move="1.8 2.2" data-track="t-gates" />
+        </svg>
+      </section>
+
+      <!-- ===== 9 · Skills ===== -->
+      <section class="scene" data-start="93" data-end="101" data-title="">
+        <div class="outro-title">
+          <h2 data-in="0.1">What it took to build Lucka</h2>
+          <p data-in="0.4">
+            Frontend, systems, data, AI, security and DevOps, in one app.
+          </p>
+        </div>
+
+        <div class="card" style="left: 75px; top: 330px" data-in="0.8">
+          <h3>Frontend</h3>
+          <ul>
+            <li>React 19 · Next.js 16 export</li>
+            <li>TypeScript strict</li>
+            <li>Optimistic UI + queue</li>
+            <li>CSS Modules + tokens</li>
+          </ul>
+        </div>
+        <div class="card r" style="left: 525px; top: 330px" data-in="1.0">
+          <h3>Rust &amp; desktop</h3>
+          <ul>
+            <li>Tauri v2 · IPC commands</li>
+            <li>Mic capture on a thread</li>
+            <li>Shared state, async HTTP</li>
+            <li>macOS + Windows</li>
+          </ul>
+        </div>
+        <div class="card g" style="left: 975px; top: 330px" data-in="1.2">
+          <h3>Data</h3>
+          <ul>
+            <li>SQLite schema design</li>
+            <li>CHECK + partial indexes</li>
+            <li>Migrations · backups</li>
+            <li>Rollback without transactions</li>
+          </ul>
+        </div>
+        <div class="card" style="left: 1425px; top: 330px" data-in="1.4">
+          <h3>Local AI</h3>
+          <ul>
+            <li>whisper.cpp · llama.cpp</li>
+            <li>JSON schema → GBNF</li>
+            <li>Metal acceleration</li>
+            <li>Verified model downloads</li>
+          </ul>
+        </div>
+        <div class="card" style="left: 75px; top: 610px" data-in="1.6">
+          <h3>LLM APIs</h3>
+          <ul>
+            <li>OpenAI · Anthropic · Gemini</li>
+            <li>Structured outputs</li>
+            <li>Untrusted-output validation</li>
+            <li>Clear error mapping</li>
+          </ul>
+        </div>
+        <div class="card d" style="left: 525px; top: 610px" data-in="1.8">
+          <h3>Security</h3>
+          <ul>
+            <li>Strict CSP</li>
+            <li>Least-privilege permissions</li>
+            <li>Keys in the OS keychain</li>
+            <li>Data never leaves the device</li>
+          </ul>
+        </div>
+        <div class="card r" style="left: 975px; top: 610px" data-in="2.0">
+          <h3>Native builds</h3>
+          <ul>
+            <li>ggml symbol clash</li>
+            <li>Dynamic libs · lipo</li>
+            <li>rpath · entitlements</li>
+            <li>Universal macOS app</li>
+          </ul>
+        </div>
+        <div class="card g" style="left: 1425px; top: 610px" data-in="2.2">
+          <h3>DevOps &amp; tooling</h3>
+          <ul>
+            <li>GitHub Actions matrix</li>
+            <li>Signed auto-updates</li>
+            <li>Custom ESLint rules</li>
+            <li>Claude Code hooks + agents</li>
+          </ul>
+        </div>
+
+        <p class="footer" data-in="3.2">
+          github.com/juan-ramirez-dev/lucka<span>·</span>docs/architecture.md
+        </p>
+      </section>
+
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <script>
+      const stage = document.getElementById('stage')
+      const recording = new URLSearchParams(location.search).has('record')
+
+      const clamp = x => Math.min(1, Math.max(0, x))
+      const ease = x => 1 - Math.pow(1 - clamp(x), 3)
+      const easeInOut = x => {
+        const v = clamp(x)
+        return v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2
+      }
+      const nums = s => s.trim().split(/\s+/).map(Number)
+
+      const scenes = [...document.querySelectorAll('.scene')].map(el => ({
+        el,
+        start: Number(el.dataset.start),
+        end: Number(el.dataset.end),
+        title: el.dataset.title,
+        ins: [...el.querySelectorAll('[data-in]')],
+        shows: [...el.querySelectorAll('[data-show]')],
+        flows: [...el.querySelectorAll('[data-flow]')],
+        draws: [...el.querySelectorAll('[data-draw]')].map(p => ({
+          p,
+          len: p.getTotalLength(),
+        })),
+        moves: [...el.querySelectorAll('[data-move]')].map(c => {
+          const track = document.getElementById(c.dataset.track)
+          return { c, track, len: track.getTotalLength() }
+        }),
+      }))
+      const last = scenes[scenes.length - 1]
+      const DURATION = last.end
+
+      const chapter = document.getElementById('chapter')
+      const progress = document.getElementById('progress')
+      const fills = scenes.map(s => {
+        const seg = document.createElement('div')
+        seg.style.flex = String(s.end - s.start)
+        const fill = document.createElement('i')
+        seg.appendChild(fill)
+        progress.appendChild(seg)
+        return fill
+      })
+
+      // Todo sale de t: grabar, pausar o saltar da el mismo cuadro.
+      function render(t) {
+        scenes.forEach((s, i) => {
+          fills[i].style.width =
+            `${clamp((t - s.start) / (s.end - s.start)) * 100}%`
+          const on = t >= s.start && (t < s.end || s === last)
+          s.el.style.visibility = on ? 'visible' : 'hidden'
+          if (!on) return
+          chapter.textContent = s.title
+          const lt = t - s.start
+          const out = s === last ? 1 : ease((s.end - t) / 0.4)
+          s.el.style.opacity = String(Math.min(ease(lt / 0.4), out))
+
+          for (const el of s.ins) {
+            const p = ease((lt - Number(el.dataset.in)) / 0.6)
+            const gone = el.dataset.out
+              ? 1 - ease((lt - Number(el.dataset.out)) / 0.4)
+              : 1
+            el.style.opacity = String(p * gone)
+            el.style.transform = `translateY(${(1 - p) * 16}px)`
+          }
+          for (const el of s.shows) {
+            const [a, b = Infinity] = nums(el.dataset.show)
+            el.style.opacity = String(
+              clamp((lt - a) / 0.15) * clamp((b - lt) / 0.15),
+            )
+          }
+          for (const el of s.flows) el.style.strokeDashoffset = String(-lt * 30)
+          for (const { p, len } of s.draws) {
+            const [a, d] = nums(p.dataset.draw)
+            const k = easeInOut((lt - a) / d)
+            p.style.strokeDasharray = String(len)
+            p.style.strokeDashoffset = String(len * (1 - k))
+            p.style.opacity = k > 0 ? '1' : '0'
+            if (p.dataset.head && k > 0.92)
+              p.setAttribute('marker-end', `url(#${p.dataset.head})`)
+            else p.removeAttribute('marker-end')
+          }
+          for (const { c, track, len } of s.moves) {
+            const [a, d] = nums(c.dataset.move)
+            const pt = track.getPointAtLength(easeInOut((lt - a) / d) * len)
+            c.setAttribute('transform', `translate(${pt.x} ${pt.y})`)
+            c.style.opacity = String(
+              clamp((lt - a) / 0.15) * clamp((a + d + 0.3 - lt) / 0.3),
+            )
+          }
+        })
+      }
+
+      window.render = render
+      window.DURATION = DURATION
+
+      if (recording) {
+        render(0)
+      } else {
+        const fit = () => {
+          const k = Math.min(innerWidth / 1920, innerHeight / 1080)
+          stage.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`
+        }
+        addEventListener('resize', fit)
+        fit()
+        const t0 = performance.now()
+        const tick = now => {
+          render(((now - t0) / 1000) % (DURATION + 2))
+          requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+      }
+    </script>
+  </body>
+</html>
