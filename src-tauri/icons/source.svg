@@ -1,6 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- Fuente de los íconos de la app: pnpm tauri icon src-tauri/icons/source.svg -->
-  <rect width="1024" height="1024" rx="128" fill="#7a1838"/>
-  <rect x="368" y="224" width="96" height="576" fill="#f3eee5"/>
-  <rect x="368" y="736" width="352" height="64" fill="#f3eee5"/>
+  <!-- Source of every app icon: pnpm tauri icon src-tauri/icons/source.svg -->
+  <!-- Two coins, for "lucas" (Bogotá slang for money). 824 px tile on the macOS icon grid. -->
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="#7c6cf2"/>
+  <g transform="translate(100 100) scale(0.8046875)">
+    <circle cx="612" cy="412" r="232" fill="#3ddbb4"/>
+    <circle cx="612" cy="412" r="176" fill="none" stroke="#17a683" stroke-opacity="0.35" stroke-width="20"/>
+    <!-- The tile-colored stroke opens the gap between the coins. -->
+    <circle cx="420" cy="604" r="266" fill="#ffffff" stroke="#7c6cf2" stroke-width="28"/>
+    <circle cx="420" cy="604" r="192" fill="none" stroke="#7c6cf2" stroke-opacity="0.22" stroke-width="22"/>
+  </g>
 </svg>
