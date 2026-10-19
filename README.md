@@ -82,7 +82,7 @@ pnpm desktop   # opens the app with live reload
 ## Docs
 
 - [`docs/architecture.md`](docs/architecture.md) → how everything works and why.
-- [`AGENTS.md`](AGENTS.md) → project rules for humans and AI agents (Spanish).
+- [`AGENTS.md`](AGENTS.md) → project rules for humans and AI agents.
 - [`contributing.md`](contributing.md) → how to open a PR.
 
 ## License

@@ -50,7 +50,7 @@ export function AiSetupModal(props: AiSetupModalProps) {
       eyebrow="IA"
       title={TITLES[step]}
     >
-      {/* Se monta de cero en cada apertura. */}
+      {/* Mounted fresh on every open. */}
       {props.open && <Steps {...props} step={step} setStep={setStep} />}
     </Modal>
   )
@@ -64,7 +64,7 @@ function Steps({
   onChange,
   onClose,
 }: AiSetupModalProps & { step: SetupStep; setStep: (s: SetupStep) => void }) {
-  // Quien ya tenía Whisper solo agregó otra IA: no hay que repetir el resto.
+  // Someone who already had Whisper only added another AI: no need to repeat the rest.
   const afterProvider = (): SetupStep =>
     !config.whisper ? 'whisper' : startAt === 'intro' ? 'mic' : 'done'
 
@@ -293,7 +293,7 @@ function OnlineForm({ onDone }: { onDone: () => Promise<void> }) {
   )
 }
 
-// Lista de modelos de un tipo. Si ya hay uno en disco, se usa sin bajar nada.
+// Models of one kind. If one is already on disk, it's used without downloading anything.
 function ModelPicker({
   models,
   action,

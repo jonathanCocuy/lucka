@@ -1,4 +1,4 @@
-// Errores que el front muestra tal cual.
+// Errors the front shows as they are.
 
 export class ApiClientError extends Error {
   constructor(

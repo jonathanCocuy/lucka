@@ -10,7 +10,7 @@ import { AiSetupModal, type SetupStep } from './ai-setup-modal'
 import { useAi } from './use-ai'
 import styles from './voice.module.css'
 
-// Contenido de la sección "IA y voz" de Ajustes.
+// Content of the "AI and voice" section in Settings.
 export function AiSettings() {
   const { config, refresh } = useAi()
   const [setup, setSetup] = useState<SetupStep | null>(null)
@@ -29,7 +29,7 @@ export function AiSettings() {
       }
     })
 
-  // Para el modelo local se muestra el nombre del catálogo, no el id.
+  // For the local model, show the catalog name, not the id.
   const label = (p: AiProvider) =>
     p.id === 'local'
       ? (config.models.find(m => m.id === p.model)?.name ?? p.model)

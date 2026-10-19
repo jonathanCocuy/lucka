@@ -1,7 +1,7 @@
 export const WIDGETS = ['available', 'budgets', 'fixed', 'recent'] as const
 export type WidgetId = (typeof WIDGETS)[number]
 
-// Ancho en columnas de una grilla de 6. Por pasos para que nunca queden huecos raros.
+// Width in columns of a 6-column grid. In steps so odd gaps never appear.
 export const SIZES = ['third', 'half', 'two-thirds', 'full'] as const
 export type WidgetSize = (typeof SIZES)[number]
 
@@ -17,7 +17,7 @@ export const DEFAULT_SIZE: WidgetSize = 'half'
 export interface Layout {
   visible: WidgetId[]
   hidden: WidgetId[]
-  // Sin valor = DEFAULT_SIZE.
+  // No value = DEFAULT_SIZE.
   sizes: Partial<Record<WidgetId, WidgetSize>>
 }
 
@@ -35,7 +35,7 @@ const isWidget = (id: unknown): id is WidgetId =>
 const isSize = (size: unknown): size is WidgetSize =>
   SIZES.includes(size as WidgetSize)
 
-// `beforeId` null = al final.
+// `beforeId` null = at the end.
 export function move(
   layout: Layout,
   id: WidgetId,
@@ -77,14 +77,14 @@ export function nextSize(size: WidgetSize): WidgetSize {
   return SIZES[(SIZES.indexOf(size) + 1) % SIZES.length]
 }
 
-// Columnas arrastradas (con decimales) → paso más cercano.
+// Dragged columns (with decimals) → nearest step.
 export function snapSize(span: number): WidgetSize {
   return SIZES.reduce((best, size) =>
     Math.abs(SPANS[size] - span) < Math.abs(SPANS[best] - span) ? size : best,
   )
 }
 
-// Lo guardado puede venir roto o de otra versión: se limpia y nunca rompe el panel.
+// What's saved may be broken or from another version: it's cleaned and never breaks the dashboard.
 export function loadLayout(): Layout {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? 'null')
@@ -111,6 +111,6 @@ export function saveLayout(layout: Layout) {
   try {
     localStorage.setItem(KEY, JSON.stringify(layout))
   } catch {
-    // Sin storage el layout vive solo en la sesión. No es dato crítico.
+    // Without storage the layout lives only in the session. It isn't critical data.
   }
 }

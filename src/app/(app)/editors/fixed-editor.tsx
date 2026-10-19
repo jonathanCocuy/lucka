@@ -16,7 +16,7 @@ interface FixedEditorProps {
 }
 
 export function FixedEditor({ items, onChange }: FixedEditorProps) {
-  // Fila con el calendario abierto. Se abre debajo para no quedar cortado por el scroll.
+  // Row with the day picker open. It opens below so the scroll doesn't cut it off.
   const [picking, setPicking] = useState<string | null>(null)
   const patch = (id: string, change: Partial<FixedExpense>) =>
     onChange(items.map(f => (f.id === id ? { ...f, ...change } : f)))

@@ -11,10 +11,10 @@ use crate::ai::local::LocalLlm;
 use models::Kind;
 use recorder::{RATE, Recorder};
 
-// Medio segundo: menos que eso es un clic sin querer.
+// Half a second: anything shorter is an accidental click.
 const MIN_SAMPLES: usize = RATE as usize / 2;
 
-// Modelos cargados en memoria. Cargar Whisper o el LLM tarda segundos: se reusan.
+// Models loaded in memory. Loading Whisper or the LLM takes seconds, so they're reused.
 #[derive(Default)]
 pub struct Engines {
     whisper: Mutex<Option<(PathBuf, WhisperContext)>>,
@@ -29,7 +29,7 @@ impl Engines {
         }
     }
 
-    // ggml aborta si el proceso sale con modelos de Metal vivos.
+    // ggml aborts if the process exits with Metal models still alive.
     pub fn unload_all(&self) {
         self.unload(Kind::Whisper);
         self.unload(Kind::Llm);
@@ -62,7 +62,7 @@ pub async fn voice_stop(
     .map_err(|_| "Falló la transcripción".to_string())?
 }
 
-// Graba un instante para que el sistema pida el permiso y confirmar que hay sonido.
+// Records a moment so the OS asks for permission, and checks there is sound.
 #[tauri::command]
 pub async fn voice_check_mic(recorder: tauri::State<'_, Recorder>) -> Result<(), String> {
     recorder.start()?;

@@ -10,7 +10,7 @@ interface DayPickerProps {
   label: string
 }
 
-// Grid 1-31 en vez de input numérico: un clic y el número siempre se ve.
+// A 1-31 grid instead of a number input: one click, and the number is always visible.
 export function DayPicker({ value, onChange, label }: DayPickerProps) {
   return (
     <div className={styles.grid} role="radiogroup" aria-label={label}>

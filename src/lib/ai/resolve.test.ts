@@ -23,7 +23,7 @@ const item = (over: Record<string, unknown>) => ({
 })
 
 describe('resolve', () => {
-  it('propone una categoría nueva con el presupuesto que dijo, o 0', () => {
+  it('proposes a new category with the budget the user said, or 0', () => {
     const draft = resolve(
       {
         items: [
@@ -43,7 +43,7 @@ describe('resolve', () => {
     })
   })
 
-  it('crea una sola categoría nueva aunque se mencione dos veces', () => {
+  it('creates one new category even if it is mentioned twice', () => {
     const draft = resolve(
       {
         items: [
@@ -58,7 +58,7 @@ describe('resolve', () => {
     expect(draft.items).toHaveLength(2)
   })
 
-  it('reconoce la categoría sin importar tildes ni mayúsculas', () => {
+  it('matches the category regardless of accents and case', () => {
     const draft = resolve({ items: [item({ category: ' CAFE ' })] }, ctx)
 
     expect(draft.items[0]).toMatchObject({
@@ -67,7 +67,7 @@ describe('resolve', () => {
     expect(draft.newCategories).toEqual([])
   })
 
-  it('usa lo pendiente del fijo cuando no dijo el monto', () => {
+  it('uses what is pending on the fixed expense when no amount was said', () => {
     const draft = resolve(
       {
         items: [
@@ -93,7 +93,7 @@ describe('resolve', () => {
     ])
   })
 
-  it('descarta ítems con monto inválido o tipo desconocido y avisa', () => {
+  it('drops items with an invalid amount or unknown type, with a warning', () => {
     const draft = resolve(
       {
         items: [
@@ -113,7 +113,7 @@ describe('resolve', () => {
     ])
   })
 
-  it('no registra un fijo ya pagado o que no existe y avisa', () => {
+  it('skips a fixed expense that is already paid or does not exist, with a warning', () => {
     const draft = resolve(
       {
         items: [
@@ -131,7 +131,7 @@ describe('resolve', () => {
     ])
   })
 
-  it('usa la fecha de hoy si no hay fecha o es inválida', () => {
+  it('uses today when the date is missing or invalid', () => {
     const draft = resolve(
       {
         items: [

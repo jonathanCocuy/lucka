@@ -5,9 +5,9 @@ use std::time::Duration;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
-// Lo que Whisper espera.
+// What Whisper expects.
 pub const RATE: u32 = 16_000;
-// Tope por si el usuario olvida parar.
+// Cap in case the user forgets to stop.
 const MAX_SECONDS: u64 = 120;
 
 struct Active {
@@ -28,7 +28,7 @@ impl Recorder {
         }
         let (stop, stop_rx) = mpsc::channel();
         let (ready, ready_rx) = mpsc::channel();
-        // El stream de cpal no es Send en todas las plataformas: vive en su hilo.
+        // cpal's stream isn't Send on every platform: it lives on its own thread.
         let thread = std::thread::spawn(move || capture(stop_rx, ready));
         ready_rx.recv().map_err(|_| no_mic())?.inspect_err(|_| {
             let _ = stop.send(());
@@ -37,7 +37,7 @@ impl Recorder {
         Ok(())
     }
 
-    // Devuelve el audio a 16 kHz mono.
+    // Returns the audio as 16 kHz mono.
     pub fn stop(&self) -> Result<Vec<f32>, String> {
         let active = self
             .active
@@ -47,7 +47,7 @@ impl Recorder {
             .ok_or_else(|| "No estabas grabando".to_string())?;
         let _ = active.stop.send(());
         let samples = active.thread.join().map_err(|_| no_mic())??;
-        // Sin permiso, macOS entrega silencio en vez de un error.
+        // Without permission, macOS delivers silence instead of an error.
         if samples.iter().all(|s| *s == 0.0) {
             return Err(
                 "Lucka no tiene permiso para usar el micrófono. Actívalo en Ajustes del sistema → Privacidad → Micrófono."
@@ -104,14 +104,14 @@ fn capture(
     Ok(resample(&mono, rate, RATE))
 }
 
-// Mezcla los canales a mono en el callback para no guardar audio de más.
+// Mixes channels down to mono in the callback so no extra audio is kept.
 fn build(
     device: &cpal::Device,
     config: cpal::SupportedStreamConfig,
     channels: usize,
     buffer: Arc<Mutex<Vec<f32>>>,
 ) -> Result<cpal::Stream, String> {
-    let on_error = |e| eprintln!("micrófono: {e}");
+    let on_error = |e| eprintln!("microphone: {e}");
     let push = move |frames: &mut dyn Iterator<Item = f32>| {
         if let Ok(mut b) = buffer.lock() {
             let samples: Vec<f32> = frames.collect();
@@ -150,7 +150,7 @@ fn build(
     stream.map_err(|_| no_mic())
 }
 
-// Interpolación lineal: basta para voz.
+// Linear interpolation: good enough for speech.
 fn resample(input: &[f32], from: u32, to: u32) -> Vec<f32> {
     if from == to || input.is_empty() {
         return input.to_vec();

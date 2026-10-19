@@ -9,7 +9,7 @@ export async function listActiveCategories(): Promise<Category[]> {
   )
 }
 
-// Reemplaza la lista: upsert por id y archiva las que no vienen.
+// Replaces the list: upsert by id and archive the missing ones.
 export async function replaceCategories(items: Category[]) {
   const db = await getDb()
   const active = await listActiveCategories()

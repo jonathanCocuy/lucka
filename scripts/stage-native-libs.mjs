@@ -1,5 +1,5 @@
-// Junta las librerías de llama.cpp en src-tauri/libs para que Tauri las meta al instalador.
-// llama va como librería dinámica: su ggml choca con el de whisper si se enlazan juntos.
+// Collects the llama.cpp libraries into src-tauri/libs so Tauri puts them in the installer.
+// llama ships as a dynamic library: its ggml clashes with whisper's if both are linked statically.
 import { execFileSync } from 'node:child_process'
 import {
   copyFileSync,
@@ -11,8 +11,8 @@ import {
 } from 'node:fs'
 import { join } from 'node:path'
 
-// Los nombres que el binario pide (@rpath/...). Iguales en tauri.macos.conf.json
-// (frameworks: Tauri las firma) y en src-tauri/build.rs (reemplazos vacíos).
+// The names the binary asks for (@rpath/...). Same as tauri.macos.conf.json
+// (frameworks: Tauri signs them) and src-tauri/build.rs (empty placeholders).
 const MAC_LIBS = [
   'libggml.0.dylib',
   'libggml-base.0.dylib',
@@ -28,8 +28,8 @@ const triple = process.env.TAURI_ENV_TARGET_TRIPLE ?? ''
 const profile = process.env.TAURI_ENV_DEBUG === 'true' ? 'debug' : 'release'
 const windows = triple.includes('windows')
 
-// Se leen de la salida de llama-cpp-sys, no de target/<perfil>: ahí las copia
-// solo si no existen y quedan viejas al recompilar.
+// Read from llama-cpp-sys's build output, not target/<profile>: it only copies them
+// there if they don't exist yet, so they go stale on rebuilds.
 function llamaLibs(t) {
   const base = existsSync(join(target, t, profile))
     ? join(target, t, profile, 'build')
@@ -39,7 +39,7 @@ function llamaLibs(t) {
     .map(d => join(base, d, 'out', windows ? 'bin' : 'lib'))
     .filter(d => existsSync(d))
     .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)
-  if (dirs.length === 0) throw new Error(`No hay build de llama en ${base}`)
+  if (dirs.length === 0) throw new Error(`No llama build in ${base}`)
   return dirs[0]
 }
 
@@ -47,7 +47,7 @@ rmSync(out, { recursive: true, force: true })
 mkdirSync(out, { recursive: true })
 
 if (triple.startsWith('universal')) {
-  // Una sola librería con las dos arquitecturas, igual que el binario.
+  // One library with both architectures, like the binary.
   const arm = llamaLibs('aarch64-apple-darwin')
   const intel = llamaLibs('x86_64-apple-darwin')
   for (const lib of MAC_LIBS) {

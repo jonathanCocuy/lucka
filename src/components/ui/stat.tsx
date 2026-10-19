@@ -10,7 +10,7 @@ interface StatProps {
   tone?: Tone
 }
 
-// Va dentro de un <dl>: etiqueta en versalitas, monto en Bodoni.
+// Goes inside a <dl>.
 export function Stat({ label, value, note, tone = 'default' }: StatProps) {
   return (
     <div className={`${styles.stat} ${styles[tone]}`}>

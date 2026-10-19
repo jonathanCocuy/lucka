@@ -76,7 +76,7 @@
   background: var(--color-mint);
 }
 
-/* Solo el paso actual lleva nombre: la fila queda corta. */
+/* Only the current step shows its name, so the row stays short. */
 .step:not([data-state='current']) .stepLabel {
   display: none;
 }

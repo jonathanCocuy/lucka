@@ -26,7 +26,7 @@ export function Settings() {
     appInfo().then(setInfo, () => null)
   }, [])
 
-  // `done` = aviso si terminó. Cancelar no muestra nada.
+  // `done` = notice when it finished. Cancelling shows nothing.
   const run = (action: () => Promise<boolean>, done: string) =>
     startBusy(async () => {
       setMessage(null)
@@ -111,7 +111,7 @@ export function Settings() {
                 startBusy(async () => {
                   setMessage(null)
                   try {
-                    // Recarga completa: el panel vuelve a leer la base vacía.
+                    // Full reload: the dashboard reads the empty database again.
                     if (await wipeWithConfirm()) window.location.replace('/')
                   } catch (error) {
                     setMessage({ kind: 'error', text: errorMessage(error) })

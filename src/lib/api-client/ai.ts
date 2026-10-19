@@ -31,7 +31,7 @@ export interface InterpretContext {
   fixed: string[]
 }
 
-// Rust devuelve el error como texto listo para mostrar.
+// Rust returns the error as text ready to show.
 async function call<T>(command: string, args?: Record<string, unknown>) {
   try {
     return await invoke<T>(command, args)
@@ -74,7 +74,7 @@ export const setDefaultProvider = setDefaultAiProvider
 export const wasPrompted = wasAiPrompted
 export const markPrompted = markAiPrompted
 
-// La key se prueba y se guarda en el llavero antes de registrar el proveedor.
+// The key is tested and stored in the keychain before the provider is saved.
 export async function addOnlineProvider(
   id: OnlineProviderId,
   model: string,
@@ -88,7 +88,7 @@ export async function addLocalProvider(model: string) {
   await saveAiProvider('local', model)
 }
 
-// Quitar = borrar también la key del llavero o el modelo del disco.
+// Removing = also deleting the key from the keychain or the model from disk.
 export async function removeProvider(provider: AiProvider) {
   if (provider.id === 'local') await deleteModel(provider.model)
   else await call('ai_delete_key', { provider: provider.id })

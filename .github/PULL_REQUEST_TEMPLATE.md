@@ -1,21 +1,21 @@
-## Qué y por qué
+## What and why
 
-<!-- 1-3 líneas. Link al ticket. -->
+<!-- 1-3 lines. Link to the ticket. -->
 
-## Cómo probar
+## How to test
 
-<!-- Pasos cortos: qué correr, qué abrir, qué se debe ver. -->
+<!-- Short steps: what to run, what to open, what you should see. -->
 
-## Impacto
+## Impact
 
-- [ ] Migración de DB
-- [ ] Cambia el formato del respaldo
-- [ ] Pide permisos nuevos de Tauri
-- [ ] Sube versión (publica Release)
-- [ ] Rompe algo existente
+- [ ] DB migration
+- [ ] Changes the backup format
+- [ ] Asks for new Tauri permissions
+- [ ] Bumps the version (publishes a Release)
+- [ ] Breaks something that exists
 
 ## Checklist
 
-- [ ] `pnpm check` pasa local
-- [ ] Tests para la lógica nueva (casos acordados en el plan)
-- [ ] Textos y comentarios cortos
+- [ ] `pnpm check` passes locally
+- [ ] Tests for the new logic (cases agreed in the plan)
+- [ ] Short texts and comments

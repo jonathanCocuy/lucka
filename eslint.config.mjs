@@ -8,7 +8,7 @@ import kebabCaseFilename from './eslint-rules/kebab-case-filename.mjs'
 import noHardcodedColorsCss from './eslint-rules/no-hardcoded-colors-css.mjs'
 import noHardcodedColors from './eslint-rules/no-hardcoded-colors.mjs'
 
-// Reglas de la casa: lo que dice AGENTS.md, bloqueado por lint.
+// House rules: what AGENTS.md says, enforced by lint.
 const house = {
   rules: {
     'kebab-case-filename': kebabCaseFilename,
@@ -50,7 +50,7 @@ export default defineConfig([
           'ts-check': false,
         },
       ],
-      // Prohibido silenciar reglas con comentarios.
+      // Rules can't be silenced with comments.
       '@eslint-community/eslint-comments/no-use': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -63,12 +63,12 @@ export default defineConfig([
       'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   },
-  // Las reglas citan colores en sus propios mensajes.
+  // The rules quote colors in their own messages.
   {
     files: ['eslint-rules/**'],
     rules: { 'house/no-hardcoded-colors': 'off' },
   },
-  // CSS: solo se usa para la regla de colores.
+  // CSS: only used for the color rule.
   {
     files: ['**/*.css'],
     language: 'css/css',
@@ -76,7 +76,7 @@ export default defineConfig([
     plugins: { css, house },
     rules: { 'house/no-hardcoded-colors-css': 'error' },
   },
-  // Única fuente de verdad de colores.
+  // The single source of truth for colors.
   {
     files: ['src/app/globals.css'],
     rules: { 'house/no-hardcoded-colors-css': 'off' },

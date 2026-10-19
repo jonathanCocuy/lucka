@@ -13,7 +13,7 @@ export function FixedPanel({ summary }: { summary: Summary }) {
   const [error, setError] = useState<string | null>(null)
   const paidCount = summary.fixed.filter(f => f.isPaid).length
   const total = summary.fixed.length
-  // Pendientes primero, ordenados por día de pago.
+  // Pending first, sorted by due day.
   const items = [...summary.fixed].sort(
     (a, b) =>
       Number(a.isPaid) - Number(b.isPaid) || a.fixed.dueDay - b.fixed.dueDay,

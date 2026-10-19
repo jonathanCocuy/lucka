@@ -24,7 +24,7 @@ pub struct ModelInfo {
     recommended: bool,
 }
 
-// Hash y tamaño sacados de Hugging Face. Un archivo distinto no se acepta.
+// Hash and size taken from Hugging Face. Any other file is rejected.
 pub const CATALOG: &[ModelInfo] = &[
     ModelInfo {
         id: "whisper-small",
@@ -102,7 +102,7 @@ fn find(id: &str) -> Result<&'static ModelInfo, String> {
         .ok_or_else(|| "Modelo desconocido".to_string())
 }
 
-// Solo hay un modelo por tipo en disco: el que esté es el que se usa.
+// Only one model per kind on disk: whichever is there gets used.
 pub fn installed(
     app: &AppHandle,
     kind: Kind,
@@ -144,7 +144,7 @@ pub async fn model_download(
         .await
         .map_err(|_| "No se pudo crear la carpeta de modelos".to_string())?;
 
-    // Se baja a .part: un corte a medias no deja un modelo roto.
+    // Downloads to .part: a cut halfway never leaves a broken model.
     let part = dir.join(format!("{}.part", model.file));
     let result = fetch(&app, &http, model, &part).await;
     if result.is_err() {
@@ -193,7 +193,7 @@ async fn fetch(
             .await
             .map_err(|_| "No se pudo escribir el modelo. ¿Hay espacio en disco?".to_string())?;
         downloaded += chunk.len() as u64;
-        // Un evento por cada ~1%: más satura el IPC.
+        // One event per ~1%: more floods the IPC.
         if downloaded - last_emit >= model.size / 100 || downloaded == model.size {
             last_emit = downloaded;
             let _ = app.emit(

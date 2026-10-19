@@ -1,5 +1,5 @@
-// Convierte lo que devuelve la IA en borradores para el resumen.
-// La IA habla en nombres; la app guarda ids. Aquí se cruzan.
+// Turns the AI's answer into drafts for the summary.
+// The AI speaks in names; the app stores ids. This is where they meet.
 import { formatMoney } from '@/lib/finance/format'
 
 export type DraftTarget =
@@ -42,7 +42,7 @@ export interface ResolveContext {
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
-// "Café" y "cafe " son la misma categoría.
+// "Café" and "cafe " are the same category.
 export const normalize = (s: string) =>
   s
     .normalize('NFD')
@@ -82,7 +82,7 @@ export function resolve(raw: unknown, ctx: ResolveContext): Draft {
     const label = description || category || 'un ítem'
 
     if (item.type === 'fixed') {
-      // La IA a veces pone el nombre del fijo en la descripción y no en la categoría.
+      // The AI sometimes puts the fixed expense's name in the description, not the category.
       const keys = [category, description].map(normalize)
       const fixed = ctx.fixed.find(f => keys.includes(normalize(f.name)))
       if (!fixed) {
@@ -140,7 +140,7 @@ export function resolve(raw: unknown, ctx: ResolveContext): Draft {
   return draft
 }
 
-// Devuelve el nombre con que quedó: la misma categoría nueva se crea una vez.
+// Returns the name it ended up with: the same new category is created only once.
 function addNew(draft: Draft, name: string, budget: number) {
   const found = draft.newCategories.find(
     c => normalize(c.name) === normalize(name),

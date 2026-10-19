@@ -22,7 +22,7 @@ const expense = (id: string) => ({
 })
 
 describe('addMany', () => {
-  it('si falla a mitad, borra lo que alcanzó a guardar y avisa el error', async () => {
+  it('deletes what it saved and rethrows when an insert fails halfway', async () => {
     const failure = new ApiClientError(422, 'Elige a qué va el gasto')
     jest.mocked(replaceCategories).mockResolvedValue(undefined)
     jest

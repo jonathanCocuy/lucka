@@ -46,7 +46,7 @@
   background: var(--color-primary-soft);
 }
 
-/* Marca menta junto al ítem activo, como la referencia. */
+/* Mint marker next to the active item, like the reference design. */
 .link[aria-current='page']::after {
   content: '';
   position: absolute;

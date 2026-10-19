@@ -20,7 +20,7 @@ export function BudgetPanel({ summary, onOver, onAdd }: BudgetPanelProps) {
     (sum, c) => sum + c.category.budget,
     0,
   )
-  // Las más cerca de pasarse, arriba.
+  // The ones closest to going over, on top.
   const items = [...summary.categories].sort((a, b) => b.ratio - a.ratio)
 
   return (

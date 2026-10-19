@@ -2,7 +2,7 @@ use keyring::Entry;
 
 use super::Online;
 
-// Llavero del sistema: Keychain en macOS, Credential Manager en Windows.
+// OS keychain: Keychain on macOS, Credential Manager on Windows.
 const SERVICE: &str = "dev.juanramirez.lucka";
 
 fn entry(provider: Online) -> Result<Entry, String> {

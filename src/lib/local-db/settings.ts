@@ -23,7 +23,7 @@ export async function getSettings() {
   return { profile, onboarded: row.onboarded_at !== null }
 }
 
-// onboarded_at no se toca: el perfil se edita también después del onboarding.
+// onboarded_at is left alone: the profile is also edited after the onboarding.
 export async function saveSettings(profile: FinanceProfile) {
   const db = await getDb()
   await db.execute(
@@ -34,7 +34,7 @@ export async function saveSettings(profile: FinanceProfile) {
   )
 }
 
-// El onboarding se guarda paso a paso. Este es el último: abre el panel.
+// The onboarding saves step by step. This is the last one: it opens the dashboard.
 export async function completeOnboarding() {
   const settings = await getSettings()
   if (!settings) throw new ApiClientError(422, 'Primero guarda tu ingreso')

@@ -9,7 +9,7 @@ export interface AiConfig {
   models: LocalModel[]
   defaultProvider: AiProvider | null
   whisper: LocalModel | null
-  // Hay todo para hablar: Whisper + una IA por defecto lista para usar.
+  // Everything is ready to talk: Whisper + a default AI ready to use.
   ready: boolean
 }
 

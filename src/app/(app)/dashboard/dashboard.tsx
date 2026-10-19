@@ -49,7 +49,7 @@ export function Dashboard() {
   const { data, summary } = useFinance()
   const [open, setOpen] = useState<Open>(null)
   const [layout, setLayout] = useState<Layout>(loadLayout)
-  // Borrador mientras se personaliza. null = modo normal.
+  // Draft while customizing. null = normal mode.
   const [draft, setDraft] = useState<Layout | null>(null)
   const [dragging, setDragging] = useState<WidgetId | null>(null)
   const [over, setOver] = useState<WidgetId | null>(null)
@@ -119,7 +119,7 @@ export function Dashboard() {
     },
   }
 
-  // Al soltar: si viene de antes, cae después del destino; si viene de después, antes.
+  // On drop: coming from before, it lands after the target; coming from after, before it.
   const drop = (target: WidgetId) => {
     if (!draft || !dragging || dragging === target) return
     const { visible } = draft
@@ -129,7 +129,7 @@ export function Dashboard() {
     setDraft(move(draft, dragging, before))
   }
 
-  // px arrastrados → columnas de la grilla de 6 → paso más cercano.
+  // Dragged px → columns of the 6-column grid → nearest step.
   const resizeTo = (id: WidgetId, width: number) => {
     if (!draft || !grid.current) return
     const gap = parseFloat(getComputedStyle(grid.current).columnGap) || 0
@@ -268,7 +268,7 @@ export function Dashboard() {
         edit={open?.kind === 'edit' ? open.edit : null}
         onClose={close}
       />
-      {/* Fuera del modo personalizar: estorba al mover widgets. */}
+      {/* Outside customize mode: it gets in the way when moving widgets. */}
       {!draft && <VoiceButton />}
     </AppShell>
   )

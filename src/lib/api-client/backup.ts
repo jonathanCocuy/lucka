@@ -13,7 +13,7 @@ export async function appInfo() {
   return { version, dbPath: await join(dir, DB_FILE) }
 }
 
-// false = el usuario canceló.
+// false = the user cancelled.
 export async function exportToFile(): Promise<boolean> {
   const today = new Date().toISOString().slice(0, 10)
   const path = await save({
@@ -49,7 +49,7 @@ export async function importFromFile(): Promise<boolean> {
   return true
 }
 
-// Doble confirmación: no hay papelera ni nube.
+// Double confirmation: there's no trash and no cloud.
 export async function wipeWithConfirm(): Promise<boolean> {
   const first = await ask('Se borran todos tus datos de este computador.', {
     title: 'Borrar todos mis datos',

@@ -23,7 +23,7 @@ export interface WidgetEdit {
   onDragOver: (e: DragEvent) => void
   onDrop: () => void
   onDragEnd: () => void
-  // `width` = px desde el borde izquierdo del widget hasta el puntero.
+  // `width` = px from the widget's left edge to the pointer.
   onResize: (width: number) => void
   onResizeStart: () => void
   onResizeEnd: () => void
@@ -39,9 +39,9 @@ interface WidgetProps {
 }
 
 export function Widget({ title, action, size, edit, children }: WidgetProps) {
-  // Sincrónico: el estado llega tarde y el drag de mover arrancaría igual.
+  // Synchronous: state arrives too late and the move drag would start anyway.
   const resizing = useRef(false)
-  // Borde izquierdo al empezar: si el widget salta de fila, el ancho no oscila.
+  // Left edge at the start: if the widget jumps rows, the width doesn't flicker.
   const startLeft = useRef(0)
 
   return (
@@ -61,7 +61,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
             return
           }
           e.dataTransfer.effectAllowed = 'move'
-          // WebKit no arranca el arrastre si no hay datos.
+          // WebKit won't start a drag without data.
           e.dataTransfer.setData('text/plain', title)
           edit.onDragStart()
         })
@@ -85,7 +85,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
         <h2 className={styles.title}>{title}</h2>
         {edit ? (
           <div className={styles.tools}>
-            {/* Respaldo de teclado para el arrastre. */}
+            {/* Keyboard fallback for dragging. */}
             <button
               type="button"
               className={styles.tool}
@@ -130,7 +130,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
         {children}
       </div>
       {edit && (
-        // Con mouse. El teclado usa el botón de tamaño.
+        // Mouse only. The keyboard uses the size button.
         <span
           className={styles.resize}
           aria-hidden

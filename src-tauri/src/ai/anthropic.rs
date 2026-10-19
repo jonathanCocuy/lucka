@@ -5,7 +5,7 @@ use super::{Online, check, prompt};
 const BASE: &str = "https://api.anthropic.com/v1";
 const VERSION: &str = "2023-06-01";
 
-// Listar modelos valida la key y no gasta tokens.
+// Listing models validates the key without spending tokens.
 pub async fn ping(http: &reqwest::Client, key: &str) -> Result<(), String> {
     let res = http
         .get(format!("{BASE}/models"))
@@ -28,7 +28,7 @@ pub async fn interpret(
         "max_tokens": 4096,
         "system": prompt::SYSTEM,
         "messages": [{ "role": "user", "content": prompt::user_message(ctx) }],
-        // Extraer datos de una frase es simple: poco esfuerzo = más rápido y barato.
+        // Pulling data out of one sentence is simple: low effort = faster and cheaper.
         "output_config": {
             "effort": "low",
             "format": { "type": "json_schema", "schema": prompt::schema() },

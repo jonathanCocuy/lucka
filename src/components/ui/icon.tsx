@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react'
 
-// Trazos a 24px, estilo línea. Sin librería: son pocos y no cambian.
+// 24px line icons. No library: there are few and they don't change.
 const PATHS = {
   grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   settings: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',

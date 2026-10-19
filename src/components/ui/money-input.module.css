@@ -65,7 +65,7 @@
   letter-spacing: var(--tracking-tight);
 }
 
-/* Monto protagonista: grande, centrado, sin caja. */
+/* Hero amount: big, centered, no box. */
 .hero .label {
   text-align: center;
 }

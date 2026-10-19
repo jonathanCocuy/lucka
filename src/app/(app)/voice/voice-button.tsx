@@ -37,7 +37,7 @@ export function VoiceButton() {
     null,
   )
 
-  // Una sola vez: a quien nunca se le preguntó, se le ofrece la IA.
+  // Only once: anyone never asked gets offered the AI.
   useEffect(() => {
     let cancelled = false
     wasPrompted().then(

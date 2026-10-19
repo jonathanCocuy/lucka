@@ -7,7 +7,7 @@ jest.mock('@tauri-apps/plugin-sql', () => ({
 }))
 
 describe('removeExpense', () => {
-  it('responde 404 si el gasto no existe', async () => {
+  it('throws 404 when the expense does not exist', async () => {
     mockDb.execute.mockResolvedValueOnce({ rowsAffected: 0 })
 
     await expect(removeExpense('no-existe')).rejects.toMatchObject({

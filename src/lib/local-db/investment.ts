@@ -23,7 +23,7 @@ export async function getInvestment(): Promise<Investment | null> {
   )
 }
 
-// Un solo fijo de inversión activo. Sin aporte, se archiva.
+// A single active investment fixed expense. With no contribution, it's archived.
 export async function saveInvestment(
   investment: Investment,
   fixed: FixedExpense | null,

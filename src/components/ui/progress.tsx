@@ -3,7 +3,7 @@ import styles from './progress.module.css'
 type Tone = 'primary' | 'mint' | 'warning' | 'muted'
 
 interface ProgressProps {
-  // Entre 0 y 1. Lo que pase de 1 se corta.
+  // Between 0 and 1. Anything above 1 is clipped.
   value: number
   tone?: Tone
   className?: string

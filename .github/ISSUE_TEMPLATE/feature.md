@@ -1,13 +1,13 @@
 ---
 name: Idea
-about: Algo que te gustaría que Lucka hiciera
+about: Something you'd like Lucka to do
 labels: enhancement
 ---
 
-## Qué problema resuelve
+## What problem it solves
 
-<!-- 1-2 líneas. -->
+<!-- 1-2 lines. -->
 
-## Qué propones
+## What you propose
 
-## Alternativas que pensaste
+## Alternatives you considered

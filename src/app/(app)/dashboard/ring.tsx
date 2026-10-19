@@ -22,7 +22,7 @@ export function Ring({ income, spent, committed, available }: RingProps) {
       <svg viewBox="0 0 220 220" className={styles.svg} aria-hidden>
         <g transform="rotate(-90 110 110)">
           <circle className={styles.track} cx="110" cy="110" r={R} />
-          {/* Con extremos redondos un tramo de largo 0 se vería como un punto. */}
+          {/* With round caps, a zero-length arc would show as a dot. */}
           {committedLen > 0 && (
             <circle
               className={styles.committed}

@@ -17,7 +17,7 @@
   animation: reveal var(--duration-slow) var(--ease-out) both;
 }
 
-/* Modo Personalizar: se mueve un poco, como los íconos del teléfono. */
+/* Customize mode: wiggles a little, like icons on a phone. */
 .widget[data-editing] {
   cursor: grab;
   border-color: var(--color-border);
@@ -107,7 +107,7 @@
   opacity: 0.6;
 }
 
-/* Ancho por pasos (ver SPANS en layout.ts). */
+/* Width in steps (see SPANS in layout.ts). */
 .widget[data-size='third'] {
   grid-column: span 2;
 }
@@ -124,7 +124,7 @@
   grid-column: span 6;
 }
 
-/* Con poco ancho 1/3 queda apretado: se agranda solo, sin tocar lo guardado. */
+/* When narrow, 1/3 is too tight: it grows on its own without touching what's saved. */
 @container widgets (width < 1000px) {
   .widget[data-size='third'] {
     grid-column: span 3;
@@ -148,7 +148,7 @@
   animation: none;
 }
 
-/* Manija en el borde derecho. Solo existe en Personalizar. */
+/* Handle on the right edge. Only exists in Customize. */
 .resize {
   position: absolute;
   top: 50%;

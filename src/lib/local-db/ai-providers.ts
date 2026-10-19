@@ -7,7 +7,7 @@ interface Row {
   is_default: number
 }
 
-// La key no vive aquí: va en el llavero del sistema (Rust).
+// The key doesn't live here: it goes in the OS keychain (Rust).
 export async function listAiProviders(): Promise<AiProvider[]> {
   const db = await getDb()
   const rows = await db.select<Row[]>(
@@ -20,7 +20,7 @@ export async function listAiProviders(): Promise<AiProvider[]> {
   }))
 }
 
-// La primera que se configura queda por defecto.
+// The first one configured becomes the default.
 export async function saveAiProvider(id: AiProviderId, model: string) {
   const db = await getDb()
   const [{ total }] = await db.select<{ total: number }[]>(
@@ -34,7 +34,7 @@ export async function saveAiProvider(id: AiProviderId, model: string) {
   )
 }
 
-// Primero se quita la anterior: el índice único no deja dos por defecto.
+// Clear the old one first: the unique index won't allow two defaults.
 export async function setDefaultAiProvider(id: AiProviderId) {
   const db = await getDb()
   await db.execute(
@@ -43,7 +43,7 @@ export async function setDefaultAiProvider(id: AiProviderId) {
   await db.execute('UPDATE ai_providers SET is_default = 1 WHERE id = ?', [id])
 }
 
-// Si era la por defecto, pasa a la más antigua que quede.
+// If it was the default, the oldest remaining one takes over.
 export async function removeAiProvider(id: AiProviderId) {
   const db = await getDb()
   await db.execute('DELETE FROM ai_providers WHERE id = ?', [id])

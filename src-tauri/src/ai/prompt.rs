@@ -10,8 +10,8 @@ pub struct Context {
     pub fixed: Vec<String>,
 }
 
-// Todos los campos obligatorios y sin null: OpenAI estricto y la gramática local lo piden.
-// "Sin dato" = "" o 0. El front (resolve.ts) decide qué hacer con eso.
+// Every field required and no nulls: OpenAI strict mode and the local grammar need that.
+// "No data" = "" or 0. The front (resolve.ts) decides what to do with it.
 pub fn schema() -> Value {
     json!({
         "type": "object",
@@ -67,7 +67,7 @@ pub fn user_message(ctx: &Context) -> String {
     .to_string()
 }
 
-// Lo que devuelva cualquier proveedor tiene que ser JSON. La forma la valida el front.
+// Whatever a provider returns must be JSON. The front validates the shape.
 pub fn parse(raw: &str) -> Result<Value, String> {
     serde_json::from_str(raw.trim())
         .map_err(|_| "La IA no respondió en el formato esperado. Intenta de nuevo.".into())

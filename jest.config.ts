@@ -6,10 +6,10 @@ const createJestConfig = nextJest({ dir: './' })
 const config: Config = {
   clearMocks: true,
   coverageProvider: 'v8',
-  // Solo se prueba lógica pura: no hace falta DOM.
+  // Only pure logic is tested: no DOM needed.
   testEnvironment: 'node',
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
-  // Ahí viven los builds de Rust y C++ (cmake deja archivos .ts que no son TypeScript).
+  // Rust and C++ builds live there (cmake leaves .ts files that aren't TypeScript).
   modulePathIgnorePatterns: ['<rootDir>/src-tauri/'],
 }
 

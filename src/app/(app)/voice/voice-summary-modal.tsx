@@ -31,7 +31,7 @@ const KIND_LABEL: Record<DraftItem['kind'], string> = {
   income: 'Ingreso',
 }
 
-// "c:<id>" = categoría existente, "n:<nombre>" = nueva.
+// "c:<id>" = existing category, "n:<name>" = new one.
 const targetValue = (t: DraftTarget) =>
   t.kind === 'category' ? `c:${t.id}` : `n:${t.name}`
 const parseTarget = (v: string): DraftTarget =>
@@ -53,7 +53,7 @@ export function VoiceSummaryModal({
 
   const fixedName = (id: string) =>
     data.fixed.find(f => f.id === id)?.name ?? 'Gasto fijo'
-  // Solo las nuevas que algún gasto sigue usando.
+  // Only the new ones some expense still uses.
   const usedNew = newCategories.filter(c =>
     items.some(
       i =>

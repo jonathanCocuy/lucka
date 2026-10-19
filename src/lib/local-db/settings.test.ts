@@ -13,7 +13,7 @@ const savedProfile = {
 }
 
 describe('completeOnboarding', () => {
-  it('responde 422 si aún no hay perfil guardado', async () => {
+  it('throws 422 when no profile is saved yet', async () => {
     mockDb.select.mockResolvedValueOnce([])
 
     await expect(completeOnboarding()).rejects.toMatchObject({
@@ -23,7 +23,7 @@ describe('completeOnboarding', () => {
     expect(mockDb.execute).not.toHaveBeenCalled()
   })
 
-  it('responde 409 si el onboarding ya estaba completo', async () => {
+  it('throws 409 when the onboarding is already complete', async () => {
     mockDb.select.mockResolvedValueOnce([
       { ...savedProfile, onboarded_at: '2026-10-01T00:00:00.000Z' },
     ])

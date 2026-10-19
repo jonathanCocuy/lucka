@@ -31,16 +31,16 @@ import {
   validateProfile,
 } from '@/lib/finance/validate'
 
-// Cada acción devuelve el error a mostrar, o null si se guardó.
+// Every action returns the error to show, or null if it saved.
 type Run = Promise<string | null>
 
 interface FinanceContextValue {
-  // false mientras carga. Evita mostrar el onboarding a quien ya tiene datos.
+  // false while loading. Keeps the onboarding from showing to someone who has data.
   ready: boolean
-  // Error al cargar (sin datos no hay panel).
+  // Load error (no data, no dashboard).
   loadError: string | null
-  data: FinanceData | null // null = onboarding sin terminar
-  // Lo guardado del onboarding, para retomarlo tras recargar.
+  data: FinanceData | null // null = onboarding not finished
+  // What the onboarding saved, to resume it after a reload.
   draft: FinanceSnapshot | null
   summary: Summary | null
   setProfile: (profile: FinanceProfile) => Run
@@ -53,7 +53,7 @@ interface FinanceContextValue {
   addIncome: (income: Omit<Income, 'id'>) => Run
   removeIncome: (id: string) => Run
   toggleFixedPaid: (id: string) => Run
-  // Varios registros de una vez (voz). Si uno no es válido, no se guarda ninguno.
+  // Several records at once (voice). If one is invalid, none are saved.
   addMany: (input: ManyInput) => Run
 }
 
@@ -63,7 +63,7 @@ export interface ManyInput {
   incomes: Omit<Income, 'id'>[]
 }
 
-// Qué cambia en pantalla y cómo se guarda. O el error de validación.
+// What changes on screen and how it's saved. Or the validation error.
 interface Change {
   next: FinanceSnapshot
   save: (api: FinanceApi) => Promise<unknown>
@@ -82,7 +82,7 @@ function toData(s: FinanceSnapshot): FinanceData | null {
   return { profile, investment, fixed, categories, expenses, incomes }
 }
 
-// El fijo de inversión lo maneja inversiones: aquí solo cambia su día.
+// The investment fixed expense belongs to investments: here only its day changes.
 function withInvestmentFixed(
   incoming: FixedExpense[],
   current: FixedExpense[],
@@ -102,7 +102,7 @@ const targetExists = (s: FinanceSnapshot, target: Expense['target']) =>
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [snapshot, setSnapshot] = useState<FinanceSnapshot | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  // Refs: las acciones van en cola y cada una parte del estado que dejó la anterior.
+  // Refs: actions are queued and each one starts from the state the previous one left.
   const latest = useRef<FinanceSnapshot | null>(null)
   const api = useRef<FinanceApi | null>(null)
   const queue = useRef<Promise<unknown>>(Promise.resolve())
@@ -118,7 +118,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         latest.current = loaded
         setSnapshot(loaded)
       } catch (error) {
-        console.error('No se pudieron abrir los datos', error)
+        console.error('Could not open the data', error)
         if (!cancelled) setLoadError(errorMessage(error))
       }
     })()
@@ -132,7 +132,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setSnapshot(next)
   }
 
-  // El cambio se ve al instante. Si guardar falla, se vuelve atrás.
+  // The change shows instantly. If saving fails, it rolls back.
   const run = (plan: Plan): Run => {
     const task = queue.current.then(async (): Run => {
       const current = latest.current
@@ -153,7 +153,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     return task
   }
 
-  // Solo con el onboarding completo (gastos, ingresos, pagos).
+  // Only with the onboarding finished (expenses, incomes, payments).
   const inPanel = (
     plan: (s: FinanceSnapshot, d: FinanceData) => Change | string,
   ) =>
@@ -262,7 +262,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         save: client => client.removeIncome(id),
       })),
 
-    // Marcar pagado = registrar lo que falta. Desmarcar = borrar sus pagos del ciclo.
+    // Mark paid = record what's pending. Unmark = delete its payments in the cycle.
     toggleFixedPaid: id =>
       inPanel((s, d) => {
         const summary = summarize(d, new Date())
@@ -348,6 +348,6 @@ function planMany(s: FinanceSnapshot, input: ManyInput): Change | string {
 
 export function useFinance() {
   const ctx = useContext(FinanceContext)
-  if (!ctx) throw new Error('useFinance fuera de FinanceProvider')
+  if (!ctx) throw new Error('useFinance outside FinanceProvider')
   return ctx
 }

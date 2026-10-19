@@ -24,7 +24,7 @@ import { getSettings } from './settings'
 
 export const BACKUP_VERSION = 1
 
-// Archivados incluidos: los gastos viejos apuntan a ellos.
+// Archived rows included: old expenses point to them.
 type Archivable<T> = T & { archivedAt: string | null }
 
 export interface BackupData {
@@ -96,7 +96,7 @@ export async function exportBackup(): Promise<Backup> {
         budget: c.budget,
         archivedAt: c.archived_at,
       })),
-      // Al revés: al importar quedan en el orden en que se crearon.
+      // Reversed: on import they end up in the order they were created.
       expenses: expenses.toReversed(),
       incomes: incomes.toReversed(),
     },
@@ -112,7 +112,7 @@ const isArchivedAt = (v: unknown): v is string | null =>
 const invalid = (detail: string) =>
   new ApiClientError(422, `El archivo no es válido: ${detail}`)
 
-// Devuelve el valor validado o lanza el error de esa fila.
+// Returns the validated value or throws that row's error.
 function take<T>(
   result: { ok: true; value: T } | { ok: false; error: string },
 ): T {
@@ -129,7 +129,7 @@ function parseFixed(input: unknown): Archivable<FixedExpense> {
   if (!isObject(input) || !isArchivedAt(input.archivedAt)) {
     throw invalid('gasto fijo inválido')
   }
-  // validateFixed le borra nombre y monto al de inversión: se valida como normal.
+  // validateFixed wipes the investment one's name and amount: validate it as a normal one.
   const [f] = take(validateFixed([{ ...input, isInvestment: false }]))
   return {
     ...f,
@@ -142,7 +142,7 @@ function parseCategory(input: unknown): Archivable<Category> {
   if (!isObject(input) || !isArchivedAt(input.archivedAt)) {
     throw invalid('categoría inválida')
   }
-  // Una a una: una archivada puede llamarse igual que una activa.
+  // One by one: an archived one may share a name with an active one.
   const [c] = take(validateCategories([input]))
   return { ...c, archivedAt: input.archivedAt }
 }
@@ -152,7 +152,7 @@ const withId = <T>(input: unknown, value: T): T & { id: string } => ({
   id: take(validateId(isObject(input) ? input.id : null)),
 })
 
-// Todo se valida antes de tocar la base.
+// Everything is validated before touching the database.
 export function parseBackup(input: unknown): BackupData {
   if (!isObject(input) || !isObject(input.data)) {
     throw invalid('no es un respaldo de Lucka')
@@ -204,7 +204,7 @@ export function parseBackup(input: unknown): BackupData {
   }
 }
 
-// Hijos primero: expenses apunta a fijos y categorías.
+// Children first: expenses point to fixed expenses and categories.
 async function wipe(db: Db) {
   for (const table of [
     'expenses',
@@ -222,7 +222,7 @@ export async function wipeAll() {
   await wipe(await getDb())
 }
 
-// Reemplaza todo. Sin transacción (ver db.ts): por eso se valida antes.
+// Replaces everything. No transaction (see db.ts): that's why it validates first.
 export async function importBackup(input: unknown) {
   const data = parseBackup(input)
   const db = await getDb()

@@ -58,7 +58,7 @@ export function Onboarding() {
   const [step, setStep] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [saving, startSaving] = useTransition()
-  // Arranca con lo ya guardado: si recargas a mitad, retomas donde ibas.
+  // Starts from what's saved: reload halfway and you pick up where you left off.
   const [profile, setProfile] = useState<FinanceProfile>(
     saved?.profile ?? { name: '', monthlyIncome: 0, payday: 30 },
   )
@@ -74,7 +74,7 @@ export function Onboarding() {
     },
   )
 
-  // Cada paso se guarda al avanzar. El último cierra el onboarding.
+  // Each step saves when you move on. The last one finishes the onboarding.
   const saveStep = () => {
     if (step === 0) return finance.setProfile(profile)
     if (step === 1) return finance.setFixed(cleanFixed(fixed))

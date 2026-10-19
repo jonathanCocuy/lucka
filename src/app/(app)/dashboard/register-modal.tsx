@@ -25,13 +25,13 @@ interface RegisterModalProps {
 export function RegisterModal(props: RegisterModalProps) {
   return (
     <Modal open={props.open} onClose={props.onClose} title="Registrar">
-      {/* Se monta de cero en cada apertura: el form arranca limpio. */}
+      {/* Mounted fresh on every open: the form starts clean. */}
       <RegisterForm {...props} />
     </Modal>
   )
 }
 
-// Lo mínimo a la vista: monto + a dónde va. Descripción y fecha (hoy) quedan plegadas.
+// The minimum in view: amount + where it goes. Description and date (today) stay folded.
 function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
   const { summary, data, addExpense, addIncome, setCategories } = useFinance()
   const [mode, setMode] = useState<Mode>('expense')

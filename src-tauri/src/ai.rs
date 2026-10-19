@@ -12,7 +12,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::voice::{Engines, models};
 
-// Una frase no debería tardar más. Evita que el botón quede colgado.
+// One sentence shouldn't take longer. Keeps the button from hanging.
 const TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Copy)]
@@ -49,7 +49,7 @@ impl Online {
     }
 }
 
-// Convierte la respuesta HTTP en JSON o en un error que el usuario entienda.
+// Turns the HTTP response into JSON or an error the user understands.
 async fn check(
     provider: Online,
     res: Result<reqwest::Response, reqwest::Error>,
@@ -74,7 +74,7 @@ async fn check(
     }
 }
 
-// Los ids de modelo van en la URL de Gemini: nada fuera de esto.
+// Model ids go into Gemini's URL: nothing outside this set.
 fn valid_model(model: &str) -> Result<&str, String> {
     let ok = !model.is_empty()
         && model
@@ -87,7 +87,7 @@ fn valid_model(model: &str) -> Result<&str, String> {
     }
 }
 
-// Se prueba antes de guardar: una key mala nunca llega al llavero.
+// Tested before saving: a bad key never reaches the keychain.
 #[tauri::command]
 pub async fn ai_save_key(
     http: tauri::State<'_, reqwest::Client>,

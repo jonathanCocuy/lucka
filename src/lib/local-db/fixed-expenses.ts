@@ -43,8 +43,8 @@ export async function upsertFixed(db: Db, f: FixedExpense) {
   )
 }
 
-// Reemplaza la lista: upsert por id y archiva los que no vienen.
-// El fijo de inversión nunca se archiva ni se edita aquí, salvo su día.
+// Replaces the list: upsert by id and archive the missing ones.
+// The investment fixed expense is never archived or edited here, except its day.
 export async function replaceFixed(items: FixedExpense[]) {
   const db = await getDb()
   const active = await listActiveFixed()
@@ -71,7 +71,7 @@ export async function replaceFixed(items: FixedExpense[]) {
   }
 }
 
-// Desmarcar pagado = borrar sus pagos entre `from` (incluido) y `to`.
+// Unmark paid = delete its payments from `from` (inclusive) to `to`.
 export async function clearPayments(fixedId: string, from: string, to: string) {
   const db = await getDb()
   const found = await db.select<{ id: string }[]>(

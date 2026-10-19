@@ -497,7 +497,7 @@ The repo encodes the rules so any agent (or human) follows them, and **tooling e
 
 ### Rules
 
-- `AGENTS.md` (Spanish): writing style, plan format, testing policy, stack, CSS, DB, git, banned things, definition of done.
+- `AGENTS.md`: writing style, plan format, testing policy, stack, CSS, DB, git, banned things, definition of done.
 - `CLAUDE.md` just imports `AGENTS.md`, so every tool reads the same source.
 - `docs/writing-style.md`: short examples of good vs bad plans, comments and commits.
 
@@ -544,7 +544,7 @@ An agent can't skip one layer to get code into `main`.
 - Jest, Node environment. Test files live next to the code (`calc.ts` → `calc.test.ts`).
 - Only logic with real branches is tested. Components that only render, wrappers and libraries are not.
 - Cases are chosen with the user before writing them (`test-planner` agent).
-- Tests are named in Spanish after the expected behavior.
+- Tests are named after the expected behavior.
 
 | File                         | Covers                                                                       |
 | ---------------------------- | ---------------------------------------------------------------------------- |

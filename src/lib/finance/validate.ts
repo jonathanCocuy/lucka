@@ -7,7 +7,7 @@ import type {
   Investment,
 } from './types'
 
-// Lo que llega de la UI o de un respaldo importado no está garantizado por los tipos.
+// Input from the UI or an imported backup isn't guaranteed by the types.
 type Result<T> = { ok: true; value: T } | { ok: false; error: string }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -54,7 +54,7 @@ export function validateFixed(input: unknown): Result<FixedExpense[]> {
   for (const f of input) {
     if (!isObject(f)) return fail('Datos inválidos')
     if (!isDay(f.dueDay)) return fail('El día de pago va de 1 a 31')
-    // El de inversión se maneja desde inversiones; solo importa su día.
+    // The investment one is managed from investments; only its day matters.
     if (f.isInvestment === true) {
       items.push({
         id: String(f.id),

@@ -12,7 +12,7 @@ interface MoneyInputProps {
   name?: string
 }
 
-// Muestra miles con punto (es-CO) mientras se escribe. Guarda solo el número.
+// Shows thousands with dots (es-CO) while typing. Saves only the number.
 export function MoneyInput({
   value,
   onChange,
@@ -33,7 +33,7 @@ export function MoneyInput({
           autoComplete="off"
           autoFocus={autoFocus}
           placeholder="0"
-          // En hero el input crece con la cifra para que el $ quede pegado y centrado.
+          // In hero size the input grows with the number so the $ stays attached and centered.
           size={size === 'hero' ? Math.max(text.length, 1) : undefined}
           value={text}
           onChange={e => onChange(Number(e.target.value.replace(/\D/g, '')))}

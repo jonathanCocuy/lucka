@@ -34,7 +34,7 @@ export function EditModal({ edit, onClose }: EditModalProps) {
   )
 }
 
-// Borrador local: nada cambia en el panel hasta "Guardar".
+// Local draft: nothing changes on the dashboard until "Save".
 function EditForm({
   edit,
   data,

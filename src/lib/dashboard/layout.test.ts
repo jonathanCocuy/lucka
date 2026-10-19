@@ -7,7 +7,7 @@ const layout: Layout = {
 }
 
 describe('move', () => {
-  it('mover uno antes de otro deja el orden correcto', () => {
+  it('moving one before another leaves the right order', () => {
     expect(move(layout, 'available', 'fixed').visible).toEqual([
       'budgets',
       'available',
@@ -24,7 +24,7 @@ describe('move', () => {
 })
 
 describe('hide', () => {
-  it('ocultar lo saca de visibles y lo pone en la bandeja', () => {
+  it('hiding takes it out of the visible list and into the tray', () => {
     expect(hide(layout, 'budgets')).toEqual({
       visible: ['available', 'fixed', 'recent'],
       hidden: ['budgets'],
@@ -34,7 +34,7 @@ describe('hide', () => {
 })
 
 describe('snapSize', () => {
-  it('arrastrar fuera de la grilla queda en 1/3 o en fila completa', () => {
+  it('dragging past the grid snaps to 1/3 or the full row', () => {
     expect(snapSize(0)).toBe('third')
     expect(snapSize(-3)).toBe('third')
     expect(snapSize(9)).toBe('full')

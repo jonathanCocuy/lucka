@@ -22,7 +22,7 @@ export async function listExpenses(): Promise<Expense[]> {
     amount: e.amount,
     description: e.description,
     date: e.spent_on,
-    // El check de la tabla garantiza que solo uno de los dos existe.
+    // The table's CHECK guarantees only one of the two is set.
     target: e.fixed_expense_id
       ? { kind: 'fixed', id: e.fixed_expense_id }
       : { kind: 'category', id: e.category_id ?? '' },

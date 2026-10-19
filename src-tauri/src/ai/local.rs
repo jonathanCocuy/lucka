@@ -14,7 +14,7 @@ use super::prompt;
 use crate::voice::Engines;
 
 const CONTEXT_TOKENS: u32 = 4096;
-// La respuesta es una lista corta de ítems.
+// The answer is a short list of items.
 const MAX_OUTPUT_TOKENS: i32 = 1024;
 
 pub struct LocalLlm {
@@ -22,7 +22,7 @@ pub struct LocalLlm {
     model: LlamaModel,
 }
 
-// llama.cpp solo se inicia una vez por proceso.
+// llama.cpp can only be initialized once per process.
 static BACKEND: OnceLock<Result<LlamaBackend, String>> = OnceLock::new();
 
 fn backend() -> Result<&'static LlamaBackend, String> {
@@ -63,7 +63,7 @@ pub fn interpret(engines: &Engines, path: PathBuf, ctx: &prompt::Context) -> Res
         .apply_chat_template(&template, &messages, true)
         .map_err(|_| failed())?;
 
-    // La gramática sale del mismo esquema que usan los proveedores en línea.
+    // The grammar comes from the same schema the online providers use.
     let grammar =
         llama_cpp_2::json_schema_to_grammar(&prompt::schema().to_string()).map_err(|_| failed())?;
     let mut sampler = LlamaSampler::chain_simple([
@@ -88,7 +88,7 @@ pub fn interpret(engines: &Engines, path: PathBuf, ctx: &prompt::Context) -> Res
     let start = batch.n_tokens();
     let mut output = Vec::new();
     for position in start..start + MAX_OUTPUT_TOKENS {
-        // sample() ya acepta el token. Aceptarlo otra vez rompe la gramática.
+        // sample() already accepts the token. Accepting it again breaks the grammar.
         let token = sampler.sample(&context, batch.n_tokens() - 1);
         if model.vocab().is_eog(token) {
             break;
