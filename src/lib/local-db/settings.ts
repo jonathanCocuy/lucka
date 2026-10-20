@@ -37,9 +37,9 @@ export async function saveSettings(profile: FinanceProfile) {
 // The onboarding saves step by step. This is the last one: it opens the dashboard.
 export async function completeOnboarding() {
   const settings = await getSettings()
-  if (!settings) throw new ApiClientError(422, 'Primero guarda tu ingreso')
+  if (!settings) throw new ApiClientError(422, 'saveIncomeFirst')
   if (settings.onboarded) {
-    throw new ApiClientError(409, 'El onboarding ya está completo')
+    throw new ApiClientError(409, 'onboardingDone')
   }
   const db = await getDb()
   await db.execute(

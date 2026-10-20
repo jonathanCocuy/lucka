@@ -6,7 +6,7 @@ import {
   type FinanceApi,
   type FinanceSnapshot,
 } from '@/lib/api-client/finance'
-import { errorMessage } from '@/lib/api-client/http'
+import { errorText, type AppError } from '@/lib/api-client/http'
 import {
   summarize,
   syncInvestmentFixed,
@@ -30,6 +30,7 @@ import {
   validateInvestment,
   validateProfile,
 } from '@/lib/finance/validate'
+import { usePreferences } from '@/lib/i18n/context'
 
 // Every action returns the error to show, or null if it saved.
 type Run = Promise<string | null>
@@ -68,7 +69,9 @@ interface Change {
   next: FinanceSnapshot
   save: (api: FinanceApi) => Promise<unknown>
 }
-type Plan = (s: FinanceSnapshot) => Change | string
+type Plan = (s: FinanceSnapshot) => Change | AppError
+
+const isChange = (plan: Change | AppError): plan is Change => 'next' in plan
 
 const FinanceContext = createContext<FinanceContextValue | null>(null)
 
@@ -100,8 +103,10 @@ const targetExists = (s: FinanceSnapshot, target: Expense['target']) =>
     : s.categories.some(c => c.id === target.id)
 
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
+  const { t, error: errorFor } = usePreferences()
   const [snapshot, setSnapshot] = useState<FinanceSnapshot | null>(null)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  // Wrapped: whatever was thrown, even undefined, still counts as an error.
+  const [loadError, setLoadError] = useState<{ error: unknown } | null>(null)
   // Refs: actions are queued and each one starts from the state the previous one left.
   const latest = useRef<FinanceSnapshot | null>(null)
   const api = useRef<FinanceApi | null>(null)
@@ -119,7 +124,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setSnapshot(loaded)
       } catch (error) {
         console.error('Could not open the data', error)
-        if (!cancelled) setLoadError(errorMessage(error))
+        if (!cancelled) setLoadError({ error })
       }
     })()
     return () => {
@@ -136,9 +141,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const run = (plan: Plan): Run => {
     const task = queue.current.then(async (): Run => {
       const current = latest.current
-      if (!current || !api.current) return 'Tus datos aún no cargan.'
+      if (!current || !api.current) return errorText(t, { code: 'notLoaded' })
       const change = plan(current)
-      if (typeof change === 'string') return change
+      if (!isChange(change)) return errorText(t, change)
 
       show(change.next)
       try {
@@ -146,7 +151,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         return null
       } catch (error) {
         show(current)
-        return errorMessage(error)
+        return errorFor(error)
       }
     })
     queue.current = task.catch(() => null)
@@ -155,11 +160,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   // Only with the onboarding finished (expenses, incomes, payments).
   const inPanel = (
-    plan: (s: FinanceSnapshot, d: FinanceData) => Change | string,
+    plan: (s: FinanceSnapshot, d: FinanceData) => Change | AppError,
   ) =>
     run(s => {
       const d = toData(s)
-      return d ? plan(s, d) : 'Primero completa tu perfil'
+      return d ? plan(s, d) : { code: 'profileFirst' }
     })
 
   const addExpenseTo = (s: FinanceSnapshot, expense: Expense): Change => ({
@@ -171,7 +176,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const value: FinanceContextValue = {
     ready: snapshot !== null || loadError !== null,
-    loadError,
+    loadError: loadError && errorFor(loadError.error),
     data,
     draft: snapshot,
     summary: data ? summarize(data, new Date()) : null,
@@ -221,8 +226,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
     complete: () =>
       run(s => {
-        if (s.onboarded) return 'El onboarding ya está completo'
-        if (!s.profile) return 'Primero guarda tu ingreso'
+        if (s.onboarded) return { code: 'onboardingDone' }
+        if (!s.profile) return { code: 'saveIncomeFirst' }
         return {
           next: { ...s, onboarded: true },
           save: client => client.completeOnboarding(),
@@ -234,7 +239,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         const parsed = validateExpense(expense)
         if (!parsed.ok) return parsed.error
         if (!targetExists(s, parsed.value.target)) {
-          return 'Elige a qué va el gasto'
+          return { code: 'pickTarget' }
         }
         return addExpenseTo(s, { ...parsed.value, id: newId() })
       }),
@@ -267,7 +272,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       inPanel((s, d) => {
         const summary = summarize(d, new Date())
         const status = summary.fixed.find(f => f.fixed.id === id)
-        if (!status) return 'Gasto fijo no encontrado'
+        if (!status) return { code: 'fixedNotFound' }
         if (!status.isPaid) {
           return addExpenseTo(s, {
             id: newId(),
@@ -302,9 +307,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   return <FinanceContext value={value}>{children}</FinanceContext>
 }
 
-function planMany(s: FinanceSnapshot, input: ManyInput): Change | string {
+function planMany(s: FinanceSnapshot, input: ManyInput): Change | AppError {
   if (input.expenses.length + input.incomes.length === 0) {
-    return 'No hay nada para guardar'
+    return { code: 'nothingToSave' }
   }
   const categories = validateCategories([
     ...s.categories,
@@ -318,7 +323,7 @@ function planMany(s: FinanceSnapshot, input: ManyInput): Change | string {
     const parsed = validateExpense(expense)
     if (!parsed.ok) return parsed.error
     if (!targetExists(withCategories, parsed.value.target)) {
-      return 'Elige a qué va cada gasto'
+      return { code: 'pickTargets' }
     }
     expenses.push({ ...parsed.value, id: newId() })
   }

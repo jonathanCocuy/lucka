@@ -2,6 +2,7 @@
 
 import { MoneyInput } from '@/components/ui/money-input'
 import type { Investment } from '@/lib/finance/types'
+import { usePreferences } from '@/lib/i18n/context'
 import styles from './editor.module.css'
 
 interface InvestmentEditorProps {
@@ -10,9 +11,11 @@ interface InvestmentEditorProps {
 }
 
 export function InvestmentEditor({ value, onChange }: InvestmentEditorProps) {
+  const { t } = usePreferences()
+  const copy = t.investmentEditor
   return (
     <div className={styles.stack}>
-      <div className={styles.toggle} role="radiogroup" aria-label="Inversiones">
+      <div className={styles.toggle} role="radiogroup" aria-label={copy.label}>
         {[true, false].map(option => (
           <button
             key={String(option)}
@@ -22,28 +25,25 @@ export function InvestmentEditor({ value, onChange }: InvestmentEditorProps) {
             className={styles.toggleOption}
             onClick={() => onChange({ ...value, hasInvestments: option })}
           >
-            {option ? 'Sí, invierto' : 'Todavía no'}
+            {option ? copy.yes : copy.no}
           </button>
         ))}
       </div>
       {value.hasInvestments && (
         <div className={styles.pair}>
           <MoneyInput
-            label="Aporte mensual"
+            label={copy.contribution}
             value={value.monthlyContribution}
             onChange={monthlyContribution =>
               onChange({ ...value, monthlyContribution })
             }
           />
           <MoneyInput
-            label="Saldo total invertido"
+            label={copy.balance}
             value={value.totalBalance}
             onChange={totalBalance => onChange({ ...value, totalBalance })}
           />
-          <p className={styles.hint}>
-            El aporte mensual se vuelve un gasto fijo. El saldo es solo
-            informativo.
-          </p>
+          <p className={styles.hint}>{copy.hint}</p>
         </div>
       )}
     </div>

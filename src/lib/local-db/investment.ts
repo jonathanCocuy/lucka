@@ -35,7 +35,7 @@ export async function saveInvestment(
 
   if (investment.hasInvestments && fixed) {
     if (active && active.id !== fixed.id) {
-      throw new ApiClientError(409, 'Ya tienes otro fijo de inversión')
+      throw new ApiClientError(409, 'investmentExists')
     }
     await upsertFixed(db, { ...fixed, isInvestment: true })
   } else if (active) {

@@ -38,7 +38,7 @@ export async function addExpense(expense: Expense) {
     [target.id],
   )
   if (active.length === 0) {
-    throw new ApiClientError(422, 'Elige a qué va el gasto')
+    throw new ApiClientError(422, 'pickTarget')
   }
   await db.execute(
     `INSERT INTO expenses (id, amount, description, spent_on, fixed_expense_id, category_id)
@@ -61,6 +61,6 @@ export async function removeExpense(id: string) {
     [id],
   )
   if (rowsAffected === 0) {
-    throw new ApiClientError(404, 'Gasto no encontrado')
+    throw new ApiClientError(404, 'expenseNotFound')
   }
 }

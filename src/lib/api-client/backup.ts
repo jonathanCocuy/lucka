@@ -2,11 +2,15 @@ import { getVersion } from '@tauri-apps/api/app'
 import { appConfigDir, join } from '@tauri-apps/api/path'
 import { ask, open, save } from '@tauri-apps/plugin-dialog'
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs'
+import type { Messages } from '@/lib/i18n/en'
 import { exportBackup, importBackup, wipeAll } from '@/lib/local-db/backup'
 import { DB_FILE } from '@/lib/local-db/db'
 import { ApiClientError } from './http'
 
-const FILTERS = [{ name: 'Respaldo de Lucka', extensions: ['json'] }]
+// The native dialogs get their text from the caller, in the app's language.
+type Copy = Messages['backup']
+
+const filters = (copy: Copy) => [{ name: copy.fileType, extensions: ['json'] }]
 
 export async function appInfo() {
   const [version, dir] = await Promise.all([getVersion(), appConfigDir()])
@@ -14,11 +18,11 @@ export async function appInfo() {
 }
 
 // false = the user cancelled.
-export async function exportToFile(): Promise<boolean> {
+export async function exportToFile(copy: Copy): Promise<boolean> {
   const today = new Date().toISOString().slice(0, 10)
   const path = await save({
     defaultPath: `lucka-${today}.json`,
-    filters: FILTERS,
+    filters: filters(copy),
   })
   if (!path) return false
   const backup = await exportBackup()
@@ -26,41 +30,46 @@ export async function exportToFile(): Promise<boolean> {
   return true
 }
 
-export async function importFromFile(): Promise<boolean> {
+export async function importFromFile(copy: Copy): Promise<boolean> {
   const path = await open({
     multiple: false,
     directory: false,
-    filters: FILTERS,
+    filters: filters(copy),
   })
   if (!path) return false
-  const confirmed = await ask(
-    'Se reemplazan todos tus datos por los del archivo. No se puede deshacer.',
-    { title: 'Importar datos', kind: 'warning', okLabel: 'Importar' },
-  )
+  const confirmed = await ask(copy.importMessage, {
+    title: copy.importTitle,
+    kind: 'warning',
+    okLabel: copy.importOk,
+    cancelLabel: copy.cancel,
+  })
   if (!confirmed) return false
 
   let parsed: unknown
   try {
     parsed = JSON.parse(await readTextFile(path))
   } catch {
-    throw new ApiClientError(422, 'El archivo no es un JSON válido')
+    throw new ApiClientError(422, 'backupNotJson')
   }
   await importBackup(parsed)
   return true
 }
 
 // Double confirmation: there's no trash and no cloud.
-export async function wipeWithConfirm(): Promise<boolean> {
-  const first = await ask('Se borran todos tus datos de este computador.', {
-    title: 'Borrar todos mis datos',
+export async function wipeWithConfirm(copy: Copy): Promise<boolean> {
+  const first = await ask(copy.wipeMessage, {
+    title: copy.wipeTitle,
     kind: 'warning',
-    okLabel: 'Continuar',
+    okLabel: copy.wipeOk,
+    cancelLabel: copy.cancel,
   })
   if (!first) return false
-  const second = await ask(
-    '¿Seguro? Esto no se puede deshacer. Exporta antes si quieres guardarlos.',
-    { title: 'Último aviso', kind: 'warning', okLabel: 'Borrar todo' },
-  )
+  const second = await ask(copy.lastMessage, {
+    title: copy.lastTitle,
+    kind: 'warning',
+    okLabel: copy.lastOk,
+    cancelLabel: copy.cancel,
+  })
   if (!second) return false
   await wipeAll()
   return true

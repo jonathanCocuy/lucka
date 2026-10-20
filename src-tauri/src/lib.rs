@@ -1,4 +1,5 @@
 mod ai;
+mod error;
 mod voice;
 
 use std::time::Duration;
@@ -24,13 +25,19 @@ pub fn run() {
             sql: include_str!("../migrations/0002_ai_providers.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "preferences",
+            sql: include_str!("../migrations/0003_preferences.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     // No global timeout: downloading a 2 GB model takes a while. Only a connect timeout.
     let http = reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(15))
         .build()
-        .expect("error creando el cliente HTTP");
+        .expect("could not build the HTTP client");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_process::init())

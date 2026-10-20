@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { usePreferences } from '@/lib/i18n/context'
 import { Icon } from './icon'
 import styles from './modal.module.css'
 
@@ -23,6 +24,7 @@ export function Modal({
   wide,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null)
+  const { t } = usePreferences()
 
   useEffect(() => {
     const dialog = ref.current
@@ -55,7 +57,7 @@ export function Modal({
               type="button"
               className={styles.close}
               onClick={onClose}
-              aria-label="Cerrar"
+              aria-label={t.common.close}
             >
               <Icon name="close" size={18} />
             </button>

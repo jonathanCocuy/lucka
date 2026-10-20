@@ -6,6 +6,8 @@ use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::io::AsyncWriteExt;
 
+use crate::error::{Code, Result};
+
 #[derive(Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
@@ -87,26 +89,26 @@ struct Progress {
     total: u64,
 }
 
-pub fn dir(app: &AppHandle) -> Result<PathBuf, String> {
+pub fn dir(app: &AppHandle) -> Result<PathBuf> {
     let base = app
         .path()
         .app_data_dir()
-        .map_err(|_| "No se encontró la carpeta de la app".to_string())?;
+        .map_err(|_| Code::AppFolderMissing)?;
     Ok(base.join("models"))
 }
 
-fn find(id: &str) -> Result<&'static ModelInfo, String> {
-    CATALOG
+fn find(id: &str) -> Result<&'static ModelInfo> {
+    Ok(CATALOG
         .iter()
         .find(|m| m.id == id)
-        .ok_or_else(|| "Modelo desconocido".to_string())
+        .ok_or(Code::UnknownModel)?)
 }
 
 // Only one model per kind on disk: whichever is there gets used.
 pub fn installed(
     app: &AppHandle,
     kind: Kind,
-) -> Result<Option<(&'static ModelInfo, PathBuf)>, String> {
+) -> Result<Option<(&'static ModelInfo, PathBuf)>> {
     let dir = dir(app)?;
     Ok(CATALOG
         .iter()
@@ -116,7 +118,7 @@ pub fn installed(
 }
 
 #[tauri::command]
-pub fn models_status(app: AppHandle) -> Result<Vec<ModelStatus>, String> {
+pub fn models_status(app: AppHandle) -> Result<Vec<ModelStatus>> {
     let dir = dir(&app)?;
     Ok(CATALOG
         .iter()
@@ -137,12 +139,12 @@ pub async fn model_download(
     engines: tauri::State<'_, super::Engines>,
     http: tauri::State<'_, reqwest::Client>,
     id: String,
-) -> Result<(), String> {
+) -> Result<()> {
     let model = find(&id)?;
     let dir = dir(&app)?;
     tokio::fs::create_dir_all(&dir)
         .await
-        .map_err(|_| "No se pudo crear la carpeta de modelos".to_string())?;
+        .map_err(|_| Code::ModelSaveFailed)?;
 
     // Downloads to .part: a cut halfway never leaves a broken model.
     let part = dir.join(format!("{}.part", model.file));
@@ -159,9 +161,9 @@ pub async fn model_download(
     {
         let _ = tokio::fs::remove_file(dir.join(other.file)).await;
     }
-    tokio::fs::rename(&part, dir.join(model.file))
+    Ok(tokio::fs::rename(&part, dir.join(model.file))
         .await
-        .map_err(|_| "No se pudo guardar el modelo".to_string())
+        .map_err(|_| Code::ModelSaveFailed)?)
 }
 
 async fn fetch(
@@ -169,29 +171,28 @@ async fn fetch(
     http: &reqwest::Client,
     model: &'static ModelInfo,
     part: &Path,
-) -> Result<(), String> {
-    let offline = || "No se pudo descargar. Revisa tu conexión.".to_string();
+) -> Result<()> {
     let response = http
         .get(model.url)
         .send()
         .await
         .and_then(|r| r.error_for_status())
-        .map_err(|_| offline())?;
+        .map_err(|_| Code::DownloadFailed)?;
 
     let mut file = tokio::fs::File::create(part)
         .await
-        .map_err(|_| "No se pudo escribir el modelo".to_string())?;
+        .map_err(|_| Code::ModelSaveFailed)?;
     let mut hasher = Sha256::new();
     let mut downloaded = 0u64;
     let mut last_emit = 0u64;
     let mut stream = response.bytes_stream();
 
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|_| offline())?;
+        let chunk = chunk.map_err(|_| Code::DownloadFailed)?;
         hasher.update(&chunk);
         file.write_all(&chunk)
             .await
-            .map_err(|_| "No se pudo escribir el modelo. ¿Hay espacio en disco?".to_string())?;
+            .map_err(|_| Code::DiskFull)?;
         downloaded += chunk.len() as u64;
         // One event per ~1%: more floods the IPC.
         if downloaded - last_emit >= model.size / 100 || downloaded == model.size {
@@ -206,9 +207,7 @@ async fn fetch(
             );
         }
     }
-    file.flush()
-        .await
-        .map_err(|_| "No se pudo escribir el modelo".to_string())?;
+    file.flush().await.map_err(|_| Code::ModelSaveFailed)?;
 
     let hash: String = hasher
         .finalize()
@@ -216,7 +215,7 @@ async fn fetch(
         .map(|b| format!("{b:02x}"))
         .collect();
     if hash != model.sha256 {
-        return Err("El archivo descargado está dañado. Intenta de nuevo.".into());
+        return Err(Code::DownloadCorrupt.into());
     }
     Ok(())
 }
@@ -226,12 +225,12 @@ pub fn model_delete(
     app: AppHandle,
     engines: tauri::State<'_, super::Engines>,
     id: String,
-) -> Result<(), String> {
+) -> Result<()> {
     let model = find(&id)?;
     engines.unload(model.kind);
     let path = dir(&app)?.join(model.file);
     if path.exists() {
-        std::fs::remove_file(path).map_err(|_| "No se pudo borrar el modelo".to_string())?;
+        std::fs::remove_file(path).map_err(|_| Code::ModelDeleteFailed)?;
     }
     Ok(())
 }

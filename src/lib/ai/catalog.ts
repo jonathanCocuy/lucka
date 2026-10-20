@@ -55,8 +55,9 @@ export const ONLINE_PROVIDERS: Record<OnlineProviderId, OnlineProvider> = {
 
 export const ONLINE_IDS = Object.keys(ONLINE_PROVIDERS) as OnlineProviderId[]
 
-export function providerName(id: AiProviderId) {
-  return id === 'local' ? 'Modelo local' : ONLINE_PROVIDERS[id].name
+// `localModel` = the translated label for the local one.
+export function providerName(id: AiProviderId, localModel: string) {
+  return id === 'local' ? localModel : ONLINE_PROVIDERS[id].name
 }
 
 export function modelName(provider: AiProvider) {

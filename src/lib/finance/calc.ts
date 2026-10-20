@@ -6,6 +6,7 @@ import type {
   Income,
   Investment,
 } from './types'
+import { INVESTMENT_NAME } from './validate'
 
 export interface Cycle {
   start: Date
@@ -165,7 +166,7 @@ export function syncInvestmentFixed(
     ...rest,
     {
       id: current?.id ?? crypto.randomUUID(),
-      name: 'Inversión',
+      name: INVESTMENT_NAME,
       amount: investment.monthlyContribution,
       dueDay: current?.dueDay ?? 1,
       isInvestment: true,

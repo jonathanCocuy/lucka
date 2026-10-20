@@ -3,7 +3,7 @@
 import { Icon } from '@/components/ui/icon'
 import { Progress } from '@/components/ui/progress'
 import type { Summary } from '@/lib/finance/calc'
-import { formatMoney } from '@/lib/finance/format'
+import { usePreferences } from '@/lib/i18n/context'
 import styles from './panel.module.css'
 
 interface BudgetPanelProps {
@@ -13,6 +13,8 @@ interface BudgetPanelProps {
 }
 
 export function BudgetPanel({ summary, onOver, onAdd }: BudgetPanelProps) {
+  const { t, money } = usePreferences()
+  const copy = t.budgets
   const over = summary.overBudget
   const overTotal = over.reduce((sum, c) => sum + c.over, 0)
   const spent = summary.categories.reduce((sum, c) => sum + c.spent, 0)
@@ -27,10 +29,11 @@ export function BudgetPanel({ summary, onOver, onAdd }: BudgetPanelProps) {
     <>
       <div className={styles.summary}>
         <p className={styles.big}>
-          {budget ? Math.round((spent / budget) * 100) : 0}%<span>usado</span>
+          {budget ? Math.round((spent / budget) * 100) : 0}%
+          <span>{copy.used}</span>
         </p>
         <p className={styles.muted}>
-          {formatMoney(spent)} de <strong>{formatMoney(budget)}</strong>
+          {money(spent)} {t.common.of} <strong>{money(budget)}</strong>
         </p>
       </div>
 
@@ -38,10 +41,8 @@ export function BudgetPanel({ summary, onOver, onAdd }: BudgetPanelProps) {
         <button type="button" className={styles.alert} onClick={onOver}>
           <Icon name="alert" size={18} />
           <span>
-            <strong>
-              {over.length} {over.length === 1 ? 'excedido' : 'excedidos'}
-            </strong>{' '}
-            · +{formatMoney(overTotal)} sobre lo planeado
+            <strong>{copy.overCount(over.length)}</strong> ·{' '}
+            {copy.overPlan(money(overTotal))}
           </span>
         </button>
       )}
@@ -57,21 +58,23 @@ export function BudgetPanel({ summary, onOver, onAdd }: BudgetPanelProps) {
                 className={`${styles.row} ${styles.budgetRow}`}
                 data-over={isOver || undefined}
                 onClick={() => onAdd(category.id)}
-                title={`Registrar gasto en ${category.name}`}
+                title={copy.addTo(category.name)}
               >
                 <span className={styles.name}>
                   {category.name}
                   <small>
                     {noBudget
-                      ? 'Sin presupuesto'
+                      ? copy.noBudget
                       : isOver
-                        ? `+${formatMoney(over)}`
-                        : `Quedan ${formatMoney(category.budget - spent)}`}
+                        ? `+${money(over)}`
+                        : copy.left(money(category.budget - spent))}
                   </small>
                 </span>
                 <span className={styles.amount}>
-                  {formatMoney(spent)}
-                  <small>de {formatMoney(category.budget)}</small>
+                  {money(spent)}
+                  <small>
+                    {t.common.of} {money(category.budget)}
+                  </small>
                 </span>
                 <Progress
                   className={styles.bar}
@@ -82,9 +85,7 @@ export function BudgetPanel({ summary, onOver, onAdd }: BudgetPanelProps) {
             </li>
           )
         })}
-        {items.length === 0 && (
-          <li className={styles.empty}>Sin categorías. Agrégalas con ✎.</li>
-        )}
+        {items.length === 0 && <li className={styles.empty}>{copy.empty}</li>}
       </ul>
     </>
   )

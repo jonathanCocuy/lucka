@@ -1,8 +1,8 @@
 'use client'
 
 import { parseISODate, type Summary } from '@/lib/finance/calc'
-import { formatMoney, formatShortDate } from '@/lib/finance/format'
 import type { FinanceData } from '@/lib/finance/types'
+import { usePreferences } from '@/lib/i18n/context'
 import styles from './panel.module.css'
 
 const LIMIT = 5
@@ -14,10 +14,15 @@ interface RecentPanelProps {
 }
 
 export function RecentPanel({ summary, data, onMore }: RecentPanelProps) {
-  const targetName = (kind: string, id: string) =>
-    kind === 'fixed'
-      ? (data.fixed.find(f => f.id === id)?.name ?? 'Fijo')
-      : (data.categories.find(c => c.id === id)?.name ?? 'Sin categoría')
+  const { t, money, date, fixedName } = usePreferences()
+  const copy = t.recent
+  const targetName = (kind: string, id: string) => {
+    if (kind === 'category') {
+      return data.categories.find(c => c.id === id)?.name ?? copy.noCategory
+    }
+    const fixed = data.fixed.find(f => f.id === id)
+    return fixed ? fixedName(fixed) : copy.fixed
+  }
 
   const items = [
     ...summary.cycleExpenses.map(e => ({
@@ -33,7 +38,7 @@ export function RecentPanel({ summary, data, onMore }: RecentPanelProps) {
       date: i.date,
       amount: i.amount,
       income: true,
-      label: 'Ingreso extra',
+      label: copy.extraIncome,
       description: i.description,
     })),
   ]
@@ -56,7 +61,7 @@ export function RecentPanel({ summary, data, onMore }: RecentPanelProps) {
               {item.description || item.label}
               <small>
                 {item.description ? `${item.label} · ` : ''}
-                {formatShortDate(parseISODate(item.date))}
+                {date(parseISODate(item.date))}
               </small>
             </span>
             <span
@@ -64,17 +69,15 @@ export function RecentPanel({ summary, data, onMore }: RecentPanelProps) {
               data-income={item.income || undefined}
             >
               {item.income ? '+' : '−'}
-              {formatMoney(item.amount)}
+              {money(item.amount)}
             </span>
           </li>
         ))}
-        {items.length === 0 && (
-          <li className={styles.empty}>Aún no hay movimientos este ciclo.</li>
-        )}
+        {items.length === 0 && <li className={styles.empty}>{copy.empty}</li>}
       </ul>
       {items.length > 0 && (
         <button type="button" className={styles.more} onClick={onMore}>
-          Ver todo
+          {copy.seeAll}
         </button>
       )}
     </>

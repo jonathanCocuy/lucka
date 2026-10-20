@@ -52,7 +52,7 @@ export async function replaceFixed(items: FixedExpense[]) {
 
   const regular = items.filter(f => !f.isInvestment)
   if (regular.some(f => f.id === investmentId)) {
-    throw new ApiClientError(422, 'La inversión se edita desde inversiones')
+    throw new ApiClientError(422, 'investmentElsewhere')
   }
   const keep = new Set(regular.map(f => f.id))
   const missing = active
@@ -79,7 +79,7 @@ export async function clearPayments(fixedId: string, from: string, to: string) {
     [fixedId],
   )
   if (found.length === 0) {
-    throw new ApiClientError(404, 'Gasto fijo no encontrado')
+    throw new ApiClientError(404, 'fixedNotFound')
   }
   await db.execute(
     `DELETE FROM expenses WHERE fixed_expense_id = ? AND spent_on >= ? AND spent_on < ?`,

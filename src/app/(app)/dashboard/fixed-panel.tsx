@@ -4,12 +4,14 @@ import { useState } from 'react'
 import { Icon } from '@/components/ui/icon'
 import { Progress } from '@/components/ui/progress'
 import type { Summary } from '@/lib/finance/calc'
-import { formatMoney } from '@/lib/finance/format'
+import { usePreferences } from '@/lib/i18n/context'
 import { useFinance } from '../finance-provider'
 import styles from './panel.module.css'
 
 export function FixedPanel({ summary }: { summary: Summary }) {
   const { toggleFixedPaid } = useFinance()
+  const { t, money, fixedName } = usePreferences()
+  const copy = t.fixedPanel
   const [error, setError] = useState<string | null>(null)
   const paidCount = summary.fixed.filter(f => f.isPaid).length
   const total = summary.fixed.length
@@ -24,10 +26,10 @@ export function FixedPanel({ summary }: { summary: Summary }) {
       <div className={styles.summary}>
         <p className={styles.big}>
           {paidCount}/{total}
-          <span>pagados</span>
+          <span>{copy.paid}</span>
         </p>
         <p className={styles.muted}>
-          Pendiente <strong>{formatMoney(summary.committed)}</strong>
+          {copy.pending} <strong>{money(summary.committed)}</strong>
         </p>
       </div>
       <Progress value={total ? paidCount / total : 0} tone="mint" />
@@ -46,24 +48,22 @@ export function FixedPanel({ summary }: { summary: Summary }) {
                 {isPaid && <Icon name="check" size={14} strokeWidth={3} />}
               </span>
               <span className={styles.name}>
-                {fixed.name}
+                {fixedName(fixed)}
                 <small>
                   {isPaid
-                    ? 'Pagado'
+                    ? copy.paidOne
                     : paid > 0
-                      ? `Abonado ${formatMoney(paid)}`
-                      : `Día ${fixed.dueDay}`}
+                      ? copy.partly(money(paid))
+                      : t.common.day(fixed.dueDay)}
                 </small>
               </span>
               <span className={styles.amount}>
-                {formatMoney(isPaid ? fixed.amount : pending)}
+                {money(isPaid ? fixed.amount : pending)}
               </span>
             </button>
           </li>
         ))}
-        {total === 0 && (
-          <li className={styles.empty}>Sin gastos fijos. Agrégalos con ✎.</li>
-        )}
+        {total === 0 && <li className={styles.empty}>{copy.empty}</li>}
       </ul>
 
       {error && <p className={styles.error}>{error}</p>}

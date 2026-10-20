@@ -18,7 +18,7 @@ import {
   type WidgetId,
 } from '@/lib/dashboard/layout'
 import type { ExpenseTarget } from '@/lib/finance/types'
-import { formatShortDate } from '@/lib/finance/format'
+import { usePreferences } from '@/lib/i18n/context'
 import { useFinance } from '../finance-provider'
 import { VoiceButton } from '../voice/voice-button'
 import { AvailablePanel } from './available-panel'
@@ -38,15 +38,10 @@ type Open =
   | { kind: 'edit'; edit: EditKind }
   | null
 
-const TITLES: Record<WidgetId, string> = {
-  available: 'Disponible',
-  budgets: 'Presupuestos',
-  fixed: 'Gastos fijos',
-  recent: 'Últimos movimientos',
-}
-
 export function Dashboard() {
   const { data, summary } = useFinance()
+  const { t, date } = usePreferences()
+  const copy = t.dashboard
   const [open, setOpen] = useState<Open>(null)
   const [layout, setLayout] = useState<Layout>(loadLayout)
   // Draft while customizing. null = normal mode.
@@ -76,7 +71,7 @@ export function Dashboard() {
     available: {
       body: <AvailablePanel summary={summary} />,
       action: (
-        <WidgetAction label="Editar ingreso" onClick={() => edit('profile')}>
+        <WidgetAction label={copy.editIncome} onClick={() => edit('profile')}>
           <Icon name="pencil" size={16} />
         </WidgetAction>
       ),
@@ -93,7 +88,7 @@ export function Dashboard() {
       ),
       action: (
         <WidgetAction
-          label="Editar presupuestos"
+          label={copy.editBudgets}
           onClick={() => edit('categories')}
         >
           <Icon name="pencil" size={16} />
@@ -103,7 +98,7 @@ export function Dashboard() {
     fixed: {
       body: <FixedPanel summary={summary} />,
       action: (
-        <WidgetAction label="Editar gastos fijos" onClick={() => edit('fixed')}>
+        <WidgetAction label={copy.editFixed} onClick={() => edit('fixed')}>
           <Icon name="pencil" size={16} />
         </WidgetAction>
       ),
@@ -173,20 +168,20 @@ export function Dashboard() {
       <div className={styles.page}>
         <header className={styles.header}>
           <div>
-            <h1 className={styles.title}>Hola, {data.profile.name}</h1>
+            <h1 className={styles.title}>{copy.hello(data.profile.name)}</h1>
             <p className={styles.cycle}>
-              {formatShortDate(cycle.start)} – {formatShortDate(lastDay)} ·{' '}
+              {date(cycle.start)} – {date(lastDay)} ·{' '}
               <strong>
                 {summary.daysToPayday === 1
-                  ? 'mañana te pagan'
-                  : `${summary.daysToPayday} días para tu pago`}
+                  ? copy.paydayTomorrow
+                  : copy.daysToPayday(summary.daysToPayday)}
               </strong>
             </p>
           </div>
           <div className={styles.actions}>
             {draft ? (
               <Button type="button" onClick={finish}>
-                <Icon name="check" size={18} /> Listo
+                <Icon name="check" size={18} /> {copy.done}
               </Button>
             ) : (
               <>
@@ -195,10 +190,10 @@ export function Dashboard() {
                   variant="ghost"
                   onClick={() => setDraft(layout)}
                 >
-                  <Icon name="layout" size={18} /> Personalizar
+                  <Icon name="layout" size={18} /> {copy.customize}
                 </Button>
                 <Button type="button" onClick={() => setOpen({ kind: 'add' })}>
-                  <Icon name="plus" size={18} /> Registrar
+                  <Icon name="plus" size={18} /> {copy.add}
                 </Button>
               </>
             )}
@@ -210,7 +205,7 @@ export function Dashboard() {
             {current.visible.map((id, index) => (
               <Widget
                 key={id}
-                title={TITLES[id]}
+                title={copy.widgets[id]}
                 action={content[id].action}
                 size={sizeOf(current, id)}
                 edit={editProps(id, index)}
@@ -221,26 +216,22 @@ export function Dashboard() {
           </main>
         ) : (
           <div className={styles.empty}>
-            <p>Tu panel está vacío.</p>
+            <p>{copy.empty}</p>
             {!draft && (
               <Button
                 type="button"
                 variant="soft"
                 onClick={() => setDraft(layout)}
               >
-                Personalizar
+                {copy.customize}
               </Button>
             )}
           </div>
         )}
 
         {draft && (
-          <section className={styles.tray} aria-label="Widgets ocultos">
-            <p>
-              {draft.hidden.length > 0
-                ? 'Toca para agregar al panel'
-                : 'Arrastra las tarjetas para ordenarlas. Con − las ocultas.'}
-            </p>
+          <section className={styles.tray} aria-label={copy.hidden}>
+            <p>{draft.hidden.length > 0 ? copy.tapToAdd : copy.dragHint}</p>
             <div className={styles.trayItems}>
               {draft.hidden.map(id => (
                 <button
@@ -249,7 +240,7 @@ export function Dashboard() {
                   className={styles.trayItem}
                   onClick={() => setDraft(show(draft, id))}
                 >
-                  <Icon name="plus" size={16} /> {TITLES[id]}
+                  <Icon name="plus" size={16} /> {copy.widgets[id]}
                 </button>
               ))}
             </div>

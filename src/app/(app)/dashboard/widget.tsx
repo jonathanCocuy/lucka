@@ -3,14 +3,8 @@
 import { useRef, type DragEvent, type ReactNode } from 'react'
 import { Icon } from '@/components/ui/icon'
 import type { WidgetSize } from '@/lib/dashboard/layout'
+import { usePreferences } from '@/lib/i18n/context'
 import styles from './widget.module.css'
-
-const SIZE_LABELS: Record<WidgetSize, string> = {
-  third: '1/3',
-  half: '1/2',
-  'two-thirds': '2/3',
-  full: 'completo',
-}
 
 export interface WidgetEdit {
   dragging: boolean
@@ -39,6 +33,8 @@ interface WidgetProps {
 }
 
 export function Widget({ title, action, size, edit, children }: WidgetProps) {
+  const { t } = usePreferences()
+  const copy = t.widget
   // Synchronous: state arrives too late and the move drag would start anyway.
   const resizing = useRef(false)
   // Left edge at the start: if the widget jumps rows, the width doesn't flicker.
@@ -89,7 +85,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
             <button
               type="button"
               className={styles.tool}
-              aria-label={`Mover ${title} antes`}
+              aria-label={copy.moveBack(title)}
               disabled={!edit.onBack}
               onClick={edit.onBack}
             >
@@ -98,7 +94,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
             <button
               type="button"
               className={styles.tool}
-              aria-label={`Mover ${title} después`}
+              aria-label={copy.moveForward(title)}
               disabled={!edit.onForward}
               onClick={edit.onForward}
             >
@@ -107,8 +103,8 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
             <button
               type="button"
               className={styles.tool}
-              aria-label={`Tamaño de ${title}: ${SIZE_LABELS[size]}. Cambiar`}
-              title={SIZE_LABELS[size]}
+              aria-label={copy.size(title, copy.sizes[size])}
+              title={copy.sizes[size]}
               onClick={edit.onCycleSize}
             >
               <Icon name="resize" size={16} />
@@ -116,7 +112,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
             <button
               type="button"
               className={`${styles.tool} ${styles.hide}`}
-              aria-label={`Ocultar ${title}`}
+              aria-label={copy.hide(title)}
               onClick={edit.onHide}
             >
               <Icon name="minus" size={16} />

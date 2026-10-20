@@ -1,12 +1,13 @@
 use serde_json::{Value, json};
 
 use super::{Online, check, prompt};
+use crate::error::{Code, Result};
 
 const BASE: &str = "https://api.anthropic.com/v1";
 const VERSION: &str = "2023-06-01";
 
 // Listing models validates the key without spending tokens.
-pub async fn ping(http: &reqwest::Client, key: &str) -> Result<(), String> {
+pub async fn ping(http: &reqwest::Client, key: &str) -> Result<()> {
     let res = http
         .get(format!("{BASE}/models"))
         .header("x-api-key", key)
@@ -22,11 +23,11 @@ pub async fn interpret(
     key: &str,
     model: &str,
     ctx: &prompt::Context,
-) -> Result<Value, String> {
+) -> Result<Value> {
     let body = json!({
         "model": model,
         "max_tokens": 4096,
-        "system": prompt::SYSTEM,
+        "system": prompt::system(ctx),
         "messages": [{ "role": "user", "content": prompt::user_message(ctx) }],
         // Pulling data out of one sentence is simple: low effort = faster and cheaper.
         "output_config": {
@@ -44,7 +45,7 @@ pub async fn interpret(
         .await;
     let data = check(Online::Anthropic, res).await?;
     if data["stop_reason"] == "refusal" {
-        return Err("Claude no quiso procesar esa frase. Intenta decirla de otra forma.".into());
+        return Err(Code::Refused.into());
     }
     let text = data["content"]
         .as_array()
@@ -52,6 +53,6 @@ pub async fn interpret(
         .flatten()
         .find(|b| b["type"] == "text")
         .and_then(|b| b["text"].as_str())
-        .ok_or_else(|| "Claude no devolvió una respuesta".to_string())?;
+        .ok_or(Online::Anthropic.error(Code::BadResponse))?;
     prompt::parse(text)
 }

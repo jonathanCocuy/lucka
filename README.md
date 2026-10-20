@@ -17,10 +17,11 @@ Local-first: your data lives in one file on your computer. No account, no server
 ## Features
 
 - **Pay-cycle budgeting.** The month runs from payday to payday, not calendar month.
+- **English or Spanish, dollars or pesos.** Picked on first launch. Dollars keep their cents.
 - **Available balance** = income − spent − fixed expenses still pending.
 - **Fixed expenses and budget categories.** Every expense pays a fixed expense or counts against a category.
-- **Voice entry.** Say _"yesterday I spent 15k on coffee and paid the internet"_ and review the records before saving.
-  - Speech-to-text always runs on your machine (Whisper).
+- **Voice entry.** Say _"yesterday I spent $4.50 on coffee and paid the internet"_ and review the records before saving.
+  - Speech-to-text always runs on your machine (Whisper), in the app's language.
   - Interpretation runs locally (Qwen via llama.cpp) or with your own OpenAI / Anthropic / Gemini key.
 - **Customizable dashboard.** Drag, resize and hide widgets.
 - **Backups.** Export and import everything as JSON.

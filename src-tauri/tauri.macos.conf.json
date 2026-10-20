@@ -11,7 +11,10 @@
         "./libs/libggml-metal.0.dylib",
         "./libs/libllama.0.dylib",
         "./libs/libllama-common.0.dylib"
-      ]
+      ],
+      "files": {
+        "Resources/es.lproj/InfoPlist.strings": "./locales/es.lproj/InfoPlist.strings"
+      }
     }
   }
 }

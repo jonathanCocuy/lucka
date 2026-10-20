@@ -10,9 +10,9 @@ describe('removeIncome', () => {
   it('throws 404 when the income does not exist', async () => {
     mockDb.execute.mockResolvedValueOnce({ rowsAffected: 0 })
 
-    await expect(removeIncome('no-existe')).rejects.toMatchObject({
+    await expect(removeIncome('missing')).rejects.toMatchObject({
       status: 404,
-      message: 'Ingreso no encontrado',
+      code: 'incomeNotFound',
     })
   })
 })

@@ -106,6 +106,7 @@ Agent: `test-planner`. Run: `pnpm test`.
   - `src/lib/local-db/` → one file per resource. **The only place with SQL.**
   - `src/lib/api-client/` → what the front calls. Business rules + errors (`ApiClientError`).
   - `src/lib/finance/` → types, validation and pure calculations.
+  - `src/lib/i18n/` → every text in the app: `en.ts` (source) and `es.ts`.
   - `src-tauri/` → Rust shell, plugins, permissions (`capabilities/`) and migrations.
 - Files in **kebab-case** (`my-component.tsx`). Lint blocks anything else.
 - No barrels (an `index.ts` that only re-exports).
@@ -135,9 +136,19 @@ Details: `docs/architecture.md` (Data layer, AI and voice).
 
 ---
 
-## 7. Database
+## 7. Copy and money
 
-- Schema change = a new file in `src-tauri/migrations/` (`0003_name.sql`) + register it in `src-tauri/src/lib.rs` with the next version.
+- Every text the user sees lives in `src/lib/i18n/en.ts` and `es.ts`. Never in a component.
+  - Write the English one first. TypeScript flags a key missing in `es.ts`.
+  - Errors travel as codes (`ErrorCode`), in TS and Rust. Only the UI turns them into text.
+- Money is integer **cents**, for every currency. Format it with `money()` from `usePreferences()`.
+  - Never divide by 100 or format amounts by hand in a component.
+
+---
+
+## 8. Database
+
+- Schema change = a new file in `src-tauri/migrations/` (`0004_name.sql`) + register it in `src-tauri/src/lib.rs` with the next version.
 - Never edit a merged migration, not even a comment.
   - It already ran on users' machines.
   - sqlx checks each migration's checksum: a changed file stops existing databases from opening.
@@ -146,7 +157,7 @@ Details: `docs/architecture.md` (Data layer, AI and voice).
 
 ---
 
-## 8. Git
+## 9. Git
 
 - Protected branches: `main`, `staging`, `feedback`. **Never push directly.** Branch + PR.
 - **Never** skip hooks: no `--no-verify`, `-n`, `HUSKY=0`.
@@ -154,7 +165,7 @@ Details: `docs/architecture.md` (Data layer, AI and voice).
 
 ---
 
-## 9. Banned
+## 10. Banned
 
 - Tailwind or any CSS utility library.
 - `any`. Use the real type or `unknown` + validation.
@@ -168,7 +179,7 @@ The hooks in `.claude/hooks/` block almost all of this. If a hook blocks you: **
 
 ---
 
-## 10. Definition of done
+## 11. Definition of done
 
 A task is NOT done if any of this fails:
 

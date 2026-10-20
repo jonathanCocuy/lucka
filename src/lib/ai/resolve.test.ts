@@ -1,21 +1,24 @@
 import { resolve, type ResolveContext } from './resolve'
 
-const ctx: ResolveContext = {
+const pesos: ResolveContext = {
   today: '2026-10-16',
+  currency: 'COP',
   categories: [
     { id: 'cat-cafe', name: 'Café' },
-    { id: 'cat-comida', name: 'Comida' },
+    { id: 'cat-food', name: 'Food' },
   ],
   fixed: [
-    { id: 'fix-arriendo', name: 'Arriendo', pending: 1_200_000, isPaid: false },
+    { id: 'fix-rent', name: 'Rent', pending: 120_000_000, isPaid: false },
     { id: 'fix-internet', name: 'Internet', pending: 0, isPaid: true },
   ],
 }
 
+const dollars: ResolveContext = { ...pesos, currency: 'USD' }
+
 const item = (over: Record<string, unknown>) => ({
   type: 'expense',
   amount: 20_000,
-  description: 'Algo',
+  description: 'Something',
   category: '',
   budget: 0,
   date: '2026-10-15',
@@ -27,19 +30,19 @@ describe('resolve', () => {
     const draft = resolve(
       {
         items: [
-          item({ category: 'regalos', budget: 100_000 }),
-          item({ category: 'Mascotas' }),
+          item({ category: 'gifts', budget: 100_000 }),
+          item({ category: 'Pets' }),
         ],
       },
-      ctx,
+      pesos,
     )
 
     expect(draft.newCategories).toEqual([
-      { name: 'Regalos', budget: 100_000 },
-      { name: 'Mascotas', budget: 0 },
+      { name: 'Gifts', budget: 10_000_000 },
+      { name: 'Pets', budget: 0 },
     ])
     expect(draft.items[0]).toMatchObject({
-      target: { kind: 'new', name: 'Regalos' },
+      target: { kind: 'new', name: 'Gifts' },
     })
   })
 
@@ -47,19 +50,19 @@ describe('resolve', () => {
     const draft = resolve(
       {
         items: [
-          item({ category: 'Regalos' }),
-          item({ category: 'regalos', budget: 50_000 }),
+          item({ category: 'Gifts' }),
+          item({ category: 'gifts', budget: 50_000 }),
         ],
       },
-      ctx,
+      pesos,
     )
 
-    expect(draft.newCategories).toEqual([{ name: 'Regalos', budget: 50_000 }])
+    expect(draft.newCategories).toEqual([{ name: 'Gifts', budget: 5_000_000 }])
     expect(draft.items).toHaveLength(2)
   })
 
   it('matches the category regardless of accents and case', () => {
-    const draft = resolve({ items: [item({ category: ' CAFE ' })] }, ctx)
+    const draft = resolve({ items: [item({ category: ' CAFE ' })] }, pesos)
 
     expect(draft.items[0]).toMatchObject({
       target: { kind: 'category', id: 'cat-cafe' },
@@ -74,20 +77,20 @@ describe('resolve', () => {
           item({
             type: 'fixed',
             amount: 0,
-            description: 'Arriendo',
+            description: 'Rent',
             category: '',
           }),
         ],
       },
-      ctx,
+      pesos,
     )
 
     expect(draft.items).toEqual([
       {
         kind: 'fixed',
-        fixedId: 'fix-arriendo',
-        amount: 1_200_000,
-        description: 'Arriendo',
+        fixedId: 'fix-rent',
+        amount: 120_000_000,
+        description: 'Rent',
         date: '2026-10-15',
       },
     ])
@@ -98,18 +101,16 @@ describe('resolve', () => {
       {
         items: [
           item({ amount: 0, description: 'Taxi' }),
-          item({ amount: -5_000, description: 'Pan' }),
-          item({ type: 'transfer', description: 'Ahorro' }),
+          item({ type: 'transfer', description: 'Savings' }),
         ],
       },
-      ctx,
+      pesos,
     )
 
     expect(draft.items).toEqual([])
     expect(draft.warnings).toEqual([
-      'No entendí el monto de «Taxi».',
-      'No entendí el monto de «Pan».',
-      'No entendí qué hacer con «Ahorro».',
+      { kind: 'badAmount', label: 'Taxi' },
+      { kind: 'unknownType', label: 'Savings' },
     ])
   })
 
@@ -118,16 +119,16 @@ describe('resolve', () => {
       {
         items: [
           item({ type: 'fixed', category: 'Internet', description: '' }),
-          item({ type: 'fixed', category: 'Gimnasio', description: '' }),
+          item({ type: 'fixed', category: 'Gym', description: '' }),
         ],
       },
-      ctx,
+      pesos,
     )
 
     expect(draft.items).toEqual([])
     expect(draft.warnings).toEqual([
-      '«Internet» ya está pagado este ciclo.',
-      '«Gimnasio» no es uno de tus gastos fijos.',
+      { kind: 'fixedPaid', label: 'Internet' },
+      { kind: 'notAFixed', label: 'Gym' },
     ])
   })
 
@@ -135,13 +136,49 @@ describe('resolve', () => {
     const draft = resolve(
       {
         items: [
-          item({ category: 'Comida', date: '' }),
-          item({ category: 'Comida', date: '2026-13-45' }),
+          item({ category: 'Food', date: '' }),
+          item({ category: 'Food', date: '2026-13-45' }),
         ],
       },
-      ctx,
+      pesos,
     )
 
     expect(draft.items.map(i => i.date)).toEqual(['2026-10-16', '2026-10-16'])
+  })
+
+  it('turns 4.5 dollars into 450 cents', () => {
+    const draft = resolve(
+      { items: [item({ amount: 4.5, category: 'Food' })] },
+      dollars,
+    )
+
+    expect(draft.items[0]).toMatchObject({ amount: 450 })
+  })
+
+  it('turns 20000 pesos into 2000000 cents', () => {
+    const draft = resolve(
+      { items: [item({ amount: 20_000, category: 'Food' })] },
+      pesos,
+    )
+
+    expect(draft.items[0]).toMatchObject({ amount: 2_000_000 })
+  })
+
+  it('warns when the amount is negative or not a number', () => {
+    const draft = resolve(
+      {
+        items: [
+          item({ amount: -4.5, description: 'Bread' }),
+          item({ amount: '4.50', description: 'Coffee' }),
+        ],
+      },
+      dollars,
+    )
+
+    expect(draft.items).toEqual([])
+    expect(draft.warnings).toEqual([
+      { kind: 'badAmount', label: 'Bread' },
+      { kind: 'badAmount', label: 'Coffee' },
+    ])
   })
 })

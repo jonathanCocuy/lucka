@@ -6,47 +6,29 @@ import { Icon } from '@/components/ui/icon'
 import { Progress } from '@/components/ui/progress'
 import { Wordmark } from '@/components/ui/wordmark'
 import { syncInvestmentFixed, unassigned } from '@/lib/finance/calc'
-import { formatMoney } from '@/lib/finance/format'
 import type {
   Category,
   FinanceProfile,
   FixedExpense,
   Investment,
 } from '@/lib/finance/types'
+import { usePreferences } from '@/lib/i18n/context'
 import { CategoryEditor } from '../editors/category-editor'
 import { FixedEditor } from '../editors/fixed-editor'
 import { InvestmentEditor } from '../editors/investment-editor'
+import { PreferencesEditor } from '../editors/preferences-editor'
 import { ProfileEditor } from '../editors/profile-editor'
 import { useFinance } from '../finance-provider'
 import styles from './onboarding.module.css'
 
 const STEPS = [
-  {
-    label: 'Ingreso',
-    title: '¿Cuánto entra cada mes?',
-    hint: 'Lo que llega a tu cuenta, ya sin descuentos.',
-  },
-  {
-    label: 'Fijos',
-    title: 'Tus gastos fijos',
-    hint: 'Lo que pagas sí o sí cada mes: arriendo, servicios, planes.',
-  },
-  {
-    label: 'Categorías',
-    title: 'Presupuesto por categoría',
-    hint: 'Lo variable. Te avisamos cuando te pases.',
-  },
-  {
-    label: 'Inversiones',
-    title: '¿Tienes inversiones?',
-    hint: 'Sin metas por ahora. Solo para tenerlas en cuenta.',
-  },
-  {
-    label: 'Resumen',
-    title: 'Así queda tu mes',
-    hint: 'Puedes cambiar todo después desde el panel.',
-  },
-]
+  'preferences',
+  'income',
+  'fixed',
+  'categories',
+  'investments',
+  'recap',
+] as const
 
 const cleanFixed = (items: FixedExpense[]) =>
   items.filter(f => f.isInvestment || (f.name.trim() && f.amount > 0))
@@ -54,8 +36,10 @@ const cleanCategories = (items: Category[]) => items.filter(c => c.name.trim())
 
 export function Onboarding() {
   const finance = useFinance()
+  const prefs = usePreferences()
+  const { t } = prefs
   const saved = finance.draft
-  const [step, setStep] = useState(0)
+  const [index, setIndex] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [saving, startSaving] = useTransition()
   // Starts from what's saved: reload halfway and you pick up where you left off.
@@ -74,12 +58,17 @@ export function Onboarding() {
     },
   )
 
+  const step = STEPS[index]
+
   // Each step saves when you move on. The last one finishes the onboarding.
   const saveStep = () => {
-    if (step === 0) return finance.setProfile(profile)
-    if (step === 1) return finance.setFixed(cleanFixed(fixed))
-    if (step === 2) return finance.setCategories(cleanCategories(categories))
-    if (step === 3) return finance.setInvestment(investment)
+    if (step === 'preferences') return prefs.save()
+    if (step === 'income') return finance.setProfile(profile)
+    if (step === 'fixed') return finance.setFixed(cleanFixed(fixed))
+    if (step === 'categories') {
+      return finance.setCategories(cleanCategories(categories))
+    }
+    if (step === 'investments') return finance.setInvestment(investment)
     return finance.complete()
   }
 
@@ -89,42 +78,45 @@ export function Onboarding() {
     categories: cleanCategories(categories),
     investment,
   }
-  const current = STEPS[step]
-  const isLast = step === STEPS.length - 1
+  const current = t.onboarding.steps[step]
+  const isLast = index === STEPS.length - 1
   const canContinue =
-    step !== 0 || (profile.name.trim() !== '' && profile.monthlyIncome > 0)
+    step !== 'income' ||
+    (profile.name.trim() !== '' && profile.monthlyIncome > 0)
 
   return (
     <main className={styles.page}>
       <header className={styles.top}>
         <Wordmark />
         <ol className={styles.steps}>
-          {STEPS.map((s, i) => (
+          {STEPS.map((id, i) => (
             <li
-              key={s.label}
+              key={id}
               className={styles.step}
-              data-state={i === step ? 'current' : i < step ? 'done' : 'next'}
+              data-state={i === index ? 'current' : i < index ? 'done' : 'next'}
             >
               <span className={styles.stepDot}>
-                {i < step ? (
+                {i < index ? (
                   <Icon name="check" size={12} strokeWidth={3} />
                 ) : (
                   i + 1
                 )}
               </span>
-              <span className={styles.stepLabel}>{s.label}</span>
+              <span className={styles.stepLabel}>
+                {t.onboarding.steps[id].label}
+              </span>
             </li>
           ))}
         </ol>
         <p className={styles.hello}>
-          Hola{profile.name.trim() && `, ${profile.name.trim()}`}
+          {t.onboarding.hello(profile.name.trim())}
         </p>
       </header>
 
       <section className={styles.content}>
         <Progress
           className={styles.progress}
-          value={(step + 1) / STEPS.length}
+          value={(index + 1) / STEPS.length}
         />
 
         <form
@@ -136,30 +128,33 @@ export function Onboarding() {
             startSaving(async () => {
               const failed = await saveStep()
               setError(failed)
-              if (!failed && !isLast) setStep(step + 1)
+              if (!failed && !isLast) setIndex(index + 1)
             })
           }}
         >
           <div className={styles.heading}>
             <p className={styles.eyebrow}>
-              Paso {step + 1} de {STEPS.length}
+              {t.onboarding.stepOf(index + 1, STEPS.length)}
             </p>
             <h1 className={styles.title}>{current.title}</h1>
             <p className={styles.hint}>{current.hint}</p>
           </div>
 
           <div className={styles.body}>
-            {step === 0 && (
+            {step === 'preferences' && <PreferencesEditor />}
+            {step === 'income' && (
               <ProfileEditor value={profile} onChange={setProfile} />
             )}
-            {step === 1 && <FixedEditor items={fixed} onChange={setFixed} />}
-            {step === 2 && (
+            {step === 'fixed' && (
+              <FixedEditor items={fixed} onChange={setFixed} />
+            )}
+            {step === 'categories' && (
               <CategoryEditor items={categories} onChange={setCategories} />
             )}
-            {step === 3 && (
+            {step === 'investments' && (
               <InvestmentEditor value={investment} onChange={setInvestment} />
             )}
-            {step === 4 && <Recap draft={draft} />}
+            {step === 'recap' && <Recap draft={draft} />}
           </div>
 
           {error && <p className={styles.error}>{error}</p>}
@@ -168,13 +163,17 @@ export function Onboarding() {
             <Button
               type="button"
               variant="ghost"
-              disabled={step === 0}
-              onClick={() => setStep(step - 1)}
+              disabled={index === 0}
+              onClick={() => setIndex(index - 1)}
             >
-              <Icon name="chevronLeft" size={18} /> Atrás
+              <Icon name="chevronLeft" size={18} /> {t.onboarding.back}
             </Button>
             <Button type="submit" disabled={!canContinue || saving}>
-              {saving ? 'Guardando…' : isLast ? 'Entrar' : 'Siguiente'}
+              {saving
+                ? t.common.saving
+                : isLast
+                  ? t.onboarding.start
+                  : t.onboarding.next}
               {!saving && <Icon name="chevronRight" size={18} />}
             </Button>
           </footer>
@@ -185,17 +184,19 @@ export function Onboarding() {
 }
 
 function Recap({ draft }: { draft: Parameters<typeof unassigned>[0] }) {
+  const { t, money } = usePreferences()
+  const copy = t.onboarding.recap
   const fixedTotal = draft.fixed.reduce((sum, f) => sum + f.amount, 0)
   const budgetTotal = draft.categories.reduce((sum, c) => sum + c.budget, 0)
   const free = unassigned(draft)
   const rows = [
     [
-      'Ingreso',
+      copy.income,
       draft.profile.monthlyIncome,
-      `Pago el día ${draft.profile.payday}`,
+      copy.payday(draft.profile.payday),
     ],
-    ['Gastos fijos', -fixedTotal, `${draft.fixed.length} fijos`],
-    ['Presupuestos', -budgetTotal, `${draft.categories.length} categorías`],
+    [copy.fixed, -fixedTotal, copy.fixedCount(draft.fixed.length)],
+    [copy.budgets, -budgetTotal, copy.categoryCount(draft.categories.length)],
   ] as const
 
   return (
@@ -206,28 +207,24 @@ function Recap({ draft }: { draft: Parameters<typeof unassigned>[0] }) {
             {label}
             <small>{note}</small>
           </span>
-          <span className={styles.recapAmount}>{formatMoney(amount)}</span>
+          <span className={styles.recapAmount}>{money(amount)}</span>
         </div>
       ))}
       <div className={`${styles.recapRow} ${styles.recapTotal}`}>
         <span className={styles.recapLabel}>
-          Sin asignar
-          <small>
-            {free < 0
-              ? 'Tus planes superan tu ingreso'
-              : 'Margen libre cada mes'}
-          </small>
+          {copy.unassigned}
+          <small>{free < 0 ? copy.overIncome : copy.margin}</small>
         </span>
         <span
           className={styles.recapAmount}
           data-negative={free < 0 || undefined}
         >
-          {formatMoney(free)}
+          {money(free)}
         </span>
       </div>
       {draft.investment.hasInvestments && (
         <p className={styles.hint}>
-          Inversiones: {formatMoney(draft.investment.totalBalance)} acumulado.
+          {copy.investments(money(draft.investment.totalBalance))}
         </p>
       )}
     </div>

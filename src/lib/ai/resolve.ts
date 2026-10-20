@@ -1,6 +1,6 @@
 // Turns the AI's answer into drafts for the summary.
-// The AI speaks in names; the app stores ids. This is where they meet.
-import { formatMoney } from '@/lib/finance/format'
+// The AI speaks in names and whole money; the app stores ids and cents. This is where they meet.
+import type { Currency } from '@/lib/i18n/locale'
 
 export type DraftTarget =
   | { kind: 'category'; id: string }
@@ -28,16 +28,26 @@ export interface NewCategory {
   budget: number
 }
 
+// Data, not text: the summary shows them in the app's language.
+export type Warning =
+  | { kind: 'notUnderstood' }
+  | {
+      kind: 'notAFixed' | 'fixedPaid' | 'unknownType' | 'badAmount'
+      label: string
+    }
+  | { kind: 'noCategory'; amount: number }
+
 export interface Draft {
   items: DraftItem[]
   newCategories: NewCategory[]
-  warnings: string[]
+  warnings: Warning[]
 }
 
 export interface ResolveContext {
   categories: { id: string; name: string }[]
   fixed: { id: string; name: string; pending: number; isPaid: boolean }[]
   today: string // YYYY-MM-DD
+  currency: Currency
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -55,8 +65,12 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
 
 const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 
-const amountOf = (v: unknown) =>
-  typeof v === 'number' && Number.isSafeInteger(v) ? v : 0
+// Pesos have no cents, so they're rounded to whole pesos first. Anything odd = 0.
+function centsOf(v: unknown, currency: Currency) {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return 0
+  const cents = currency === 'COP' ? Math.round(v) * 100 : Math.round(v * 100)
+  return Number.isSafeInteger(cents) ? cents : 0
+}
 
 const dateOr = (v: unknown, today: string) =>
   typeof v === 'string' && ISO_DATE.test(v) && !Number.isNaN(Date.parse(v))
@@ -69,28 +83,28 @@ export function resolve(raw: unknown, ctx: ResolveContext): Draft {
   const draft: Draft = { items: [], newCategories: [], warnings: [] }
   const items = isObject(raw) && Array.isArray(raw.items) ? raw.items : null
   if (!items) {
-    draft.warnings.push('No entendí lo que dijiste. Intenta de nuevo.')
+    draft.warnings.push({ kind: 'notUnderstood' })
     return draft
   }
 
   for (const item of items) {
     if (!isObject(item)) continue
-    const amount = amountOf(item.amount)
+    const amount = centsOf(item.amount, ctx.currency)
     const description = text(item.description)
     const category = text(item.category)
     const date = dateOr(item.date, ctx.today)
-    const label = description || category || 'un ítem'
+    const label = description || category
 
     if (item.type === 'fixed') {
       // The AI sometimes puts the fixed expense's name in the description, not the category.
       const keys = [category, description].map(normalize)
       const fixed = ctx.fixed.find(f => keys.includes(normalize(f.name)))
       if (!fixed) {
-        draft.warnings.push(`«${label}» no es uno de tus gastos fijos.`)
+        draft.warnings.push({ kind: 'notAFixed', label })
         continue
       }
       if (fixed.isPaid) {
-        draft.warnings.push(`«${fixed.name}» ya está pagado este ciclo.`)
+        draft.warnings.push({ kind: 'fixedPaid', label: fixed.name })
         continue
       }
       draft.items.push({
@@ -104,11 +118,11 @@ export function resolve(raw: unknown, ctx: ResolveContext): Draft {
     }
 
     if (item.type !== 'expense' && item.type !== 'income') {
-      draft.warnings.push(`No entendí qué hacer con «${label}».`)
+      draft.warnings.push({ kind: 'unknownType', label })
       continue
     }
     if (amount <= 0) {
-      draft.warnings.push(`No entendí el monto de «${label}».`)
+      draft.warnings.push({ kind: 'badAmount', label })
       continue
     }
 
@@ -119,9 +133,7 @@ export function resolve(raw: unknown, ctx: ResolveContext): Draft {
 
     const name = category || description
     if (!name) {
-      draft.warnings.push(
-        `No entendí en qué fue el gasto de ${formatMoney(amount)}.`,
-      )
+      draft.warnings.push({ kind: 'noCategory', amount })
       continue
     }
     const existing = ctx.categories.find(
@@ -134,7 +146,10 @@ export function resolve(raw: unknown, ctx: ResolveContext): Draft {
       date,
       target: existing
         ? { kind: 'category', id: existing.id }
-        : { kind: 'new', name: addNew(draft, name, amountOf(item.budget)) },
+        : {
+            kind: 'new',
+            name: addNew(draft, name, centsOf(item.budget, ctx.currency)),
+          },
     })
   }
   return draft

@@ -13,7 +13,8 @@ import {
   setDefaultAiProvider,
   wasAiPrompted,
 } from '@/lib/local-db/ai-providers'
-import { ApiClientError } from './http'
+import type { Language, Preferences } from '@/lib/i18n/locale'
+import { ApiClientError, isErrorCode, type ErrorParams } from './http'
 
 export interface LocalModel {
   id: string
@@ -24,22 +25,33 @@ export interface LocalModel {
   installed: boolean
 }
 
-export interface InterpretContext {
+export interface InterpretContext extends Preferences {
   text: string
   today: string
   categories: string[]
   fixed: string[]
 }
 
-// Rust returns the error as text ready to show.
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null
+
+// Rust sends { code, provider?, status? } (src-tauri/src/error.rs).
+// Anything else, like a bad argument caught by Tauri, gets the generic message.
+export function nativeError(error: unknown) {
+  if (!isObject(error) || !isErrorCode(error.code)) {
+    return new ApiClientError(422, 'generic')
+  }
+  const params: ErrorParams = {}
+  if (typeof error.provider === 'string') params.provider = error.provider
+  if (typeof error.status === 'number') params.status = error.status
+  return new ApiClientError(422, error.code, params)
+}
+
 async function call<T>(command: string, args?: Record<string, unknown>) {
   try {
     return await invoke<T>(command, args)
   } catch (error) {
-    throw new ApiClientError(
-      422,
-      typeof error === 'string' ? error : 'Algo falló. Intenta de nuevo.',
-    )
+    throw nativeError(error)
   }
 }
 
@@ -66,7 +78,9 @@ export async function downloadModel(
 export const deleteModel = (id: string) => call('model_delete', { id })
 
 export const startRecording = () => call('voice_start')
-export const stopRecording = () => call<string>('voice_stop')
+// Whisper listens in the app's language.
+export const stopRecording = (language: Language) =>
+  call<string>('voice_stop', { language })
 export const checkMic = () => call('voice_check_mic')
 
 export const listProviders = listAiProviders

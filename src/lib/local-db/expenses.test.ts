@@ -10,9 +10,9 @@ describe('removeExpense', () => {
   it('throws 404 when the expense does not exist', async () => {
     mockDb.execute.mockResolvedValueOnce({ rowsAffected: 0 })
 
-    await expect(removeExpense('no-existe')).rejects.toMatchObject({
+    await expect(removeExpense('missing')).rejects.toMatchObject({
       status: 404,
-      message: 'Gasto no encontrado',
+      code: 'expenseNotFound',
     })
   })
 })

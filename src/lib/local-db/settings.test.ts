@@ -18,7 +18,7 @@ describe('completeOnboarding', () => {
 
     await expect(completeOnboarding()).rejects.toMatchObject({
       status: 422,
-      message: 'Primero guarda tu ingreso',
+      code: 'saveIncomeFirst',
     })
     expect(mockDb.execute).not.toHaveBeenCalled()
   })
@@ -30,7 +30,7 @@ describe('completeOnboarding', () => {
 
     await expect(completeOnboarding()).rejects.toMatchObject({
       status: 409,
-      message: 'El onboarding ya está completo',
+      code: 'onboardingDone',
     })
     expect(mockDb.execute).not.toHaveBeenCalled()
   })

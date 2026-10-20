@@ -1,10 +1,11 @@
 use serde_json::{Value, json};
 
 use super::{Online, check, prompt};
+use crate::error::{Code, Result};
 
 const BASE: &str = "https://generativelanguage.googleapis.com/v1beta";
 
-pub async fn ping(http: &reqwest::Client, key: &str) -> Result<(), String> {
+pub async fn ping(http: &reqwest::Client, key: &str) -> Result<()> {
     let res = http
         .get(format!("{BASE}/models"))
         .header("x-goog-api-key", key)
@@ -19,9 +20,9 @@ pub async fn interpret(
     key: &str,
     model: &str,
     ctx: &prompt::Context,
-) -> Result<Value, String> {
+) -> Result<Value> {
     let body = json!({
-        "systemInstruction": { "parts": [{ "text": prompt::SYSTEM }] },
+        "systemInstruction": { "parts": [{ "text": prompt::system(ctx) }] },
         "contents": [{ "role": "user", "parts": [{ "text": prompt::user_message(ctx) }] }],
         "generationConfig": {
             "responseMimeType": "application/json",
@@ -38,6 +39,6 @@ pub async fn interpret(
     let data = check(Online::Gemini, res).await?;
     let text = data["candidates"][0]["content"]["parts"][0]["text"]
         .as_str()
-        .ok_or_else(|| "Gemini no devolvió una respuesta".to_string())?;
+        .ok_or(Online::Gemini.error(Code::BadResponse))?;
     prompt::parse(text)
 }

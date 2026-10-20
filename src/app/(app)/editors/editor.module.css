@@ -209,6 +209,17 @@
   box-shadow: var(--shadow-sm);
 }
 
+.toggleOption:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
 @keyframes open {
   from {
     opacity: 0;

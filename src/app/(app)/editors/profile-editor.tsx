@@ -5,6 +5,7 @@ import field from '@/components/ui/field.module.css'
 import { MoneyInput } from '@/components/ui/money-input'
 import type { FinanceProfile } from '@/lib/finance/types'
 import { NAME_MAX } from '@/lib/finance/validate'
+import { usePreferences } from '@/lib/i18n/context'
 import styles from './editor.module.css'
 
 interface ProfileEditorProps {
@@ -13,10 +14,11 @@ interface ProfileEditorProps {
 }
 
 export function ProfileEditor({ value, onChange }: ProfileEditorProps) {
+  const { t } = usePreferences()
   return (
     <div className={styles.stack}>
       <label className={field.field}>
-        <span className={field.label}>¿Cómo te llamas?</span>
+        <span className={field.label}>{t.profile.name}</span>
         <input
           className={field.input}
           autoFocus
@@ -27,22 +29,19 @@ export function ProfileEditor({ value, onChange }: ProfileEditorProps) {
         />
       </label>
       <MoneyInput
-        label="Ingreso mensual neto"
+        label={t.profile.income}
         size="lg"
         value={value.monthlyIncome}
         onChange={monthlyIncome => onChange({ ...value, monthlyIncome })}
       />
       <div className={field.field}>
-        <span className={field.label}>Día en que te pagan</span>
+        <span className={field.label}>{t.profile.payday}</span>
         <DayPicker
-          label="Día en que te pagan"
+          label={t.profile.payday}
           value={value.payday}
           onChange={payday => onChange({ ...value, payday })}
         />
-        <span className={styles.hint}>
-          Tu mes va de pago a pago. Si el mes no tiene ese día, se toma el
-          último.
-        </span>
+        <span className={styles.hint}>{t.profile.paydayHint}</span>
       </div>
     </div>
   )

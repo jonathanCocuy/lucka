@@ -1,4 +1,6 @@
-import { formatMoney } from '@/lib/finance/format'
+'use client'
+
+import { usePreferences } from '@/lib/i18n/context'
 import styles from './ring.module.css'
 
 const R = 92
@@ -12,6 +14,7 @@ interface RingProps {
 }
 
 export function Ring({ income, spent, committed, available }: RingProps) {
+  const { t, money } = usePreferences()
   const base = Math.max(income, 1)
   const spentLen = Math.min(spent / base, 1) * C
   const committedLen = Math.min(committed / base, 1 - spentLen / C) * C
@@ -45,11 +48,13 @@ export function Ring({ income, spent, committed, available }: RingProps) {
         </g>
       </svg>
       <div className={styles.center}>
-        <p className={styles.label}>{negative ? 'Te pasaste' : 'Disponible'}</p>
-        <p className={styles.amount} data-negative={negative || undefined}>
-          {formatMoney(available)}
+        <p className={styles.label}>
+          {negative ? t.available.over : t.available.label}
         </p>
-        <p className={styles.sub}>de {formatMoney(income)}</p>
+        <p className={styles.amount} data-negative={negative || undefined}>
+          {money(available)}
+        </p>
+        <p className={styles.sub}>{t.available.ofIncome(money(income))}</p>
       </div>
     </div>
   )

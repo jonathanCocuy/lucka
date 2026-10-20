@@ -38,6 +38,6 @@ export async function removeIncome(id: string) {
     [id],
   )
   if (rowsAffected === 0) {
-    throw new ApiClientError(404, 'Ingreso no encontrado')
+    throw new ApiClientError(404, 'incomeNotFound')
   }
 }

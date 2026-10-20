@@ -10,6 +10,7 @@ use std::time::Duration;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
+use crate::error::{AppError, Code, Result};
 use crate::voice::{Engines, models};
 
 // One sentence shouldn't take longer. Keeps the button from hanging.
@@ -23,12 +24,12 @@ pub enum Online {
 }
 
 impl Online {
-    fn parse(id: &str) -> Result<Self, String> {
+    fn parse(id: &str) -> Result<Self> {
         match id {
             "openai" => Ok(Self::OpenAi),
             "anthropic" => Ok(Self::Anthropic),
             "gemini" => Ok(Self::Gemini),
-            _ => Err("Proveedor desconocido".into()),
+            _ => Err(Code::UnknownProvider.into()),
         }
     }
 
@@ -47,35 +48,29 @@ impl Online {
             Self::Gemini => "Gemini",
         }
     }
+
+    fn error(self, code: Code) -> AppError {
+        AppError::provider(code, self.name())
+    }
 }
 
 // Turns the HTTP response into JSON or an error the user understands.
-async fn check(
-    provider: Online,
-    res: Result<reqwest::Response, reqwest::Error>,
-) -> Result<Value, String> {
-    let name = provider.name();
-    let res = res.map_err(|_| format!("No hay conexión con {name}. Revisa tu internet."))?;
+async fn check(provider: Online, res: reqwest::Result<reqwest::Response>) -> Result<Value> {
+    let res = res.map_err(|_| provider.error(Code::Offline))?;
     match res.status().as_u16() {
         200..=299 => res
             .json()
             .await
-            .map_err(|_| format!("{name} respondió algo inesperado")),
-        401 | 403 => Err(format!(
-            "{name} rechazó la key. Revisa que esté bien copiada y activa."
-        )),
-        404 => Err(format!(
-            "{name} no reconoce el modelo elegido. Cambia de modelo en Ajustes."
-        )),
-        429 => Err(format!(
-            "{name} dice que llegaste al límite de uso. Revisa tu saldo o espera un poco."
-        )),
-        code => Err(format!("{name} falló ({code}). Intenta de nuevo.")),
+            .map_err(|_| provider.error(Code::BadResponse)),
+        401 | 403 => Err(provider.error(Code::KeyRejected)),
+        404 => Err(provider.error(Code::ModelNotFound)),
+        429 => Err(provider.error(Code::RateLimited)),
+        status => Err(provider.error(Code::ProviderFailed).with_status(status)),
     }
 }
 
 // Model ids go into Gemini's URL: nothing outside this set.
-fn valid_model(model: &str) -> Result<&str, String> {
+fn valid_model(model: &str) -> Result<&str> {
     let ok = !model.is_empty()
         && model
             .chars()
@@ -83,7 +78,7 @@ fn valid_model(model: &str) -> Result<&str, String> {
     if ok {
         Ok(model)
     } else {
-        Err("Modelo inválido".into())
+        Err(Code::InvalidModel.into())
     }
 }
 
@@ -93,11 +88,11 @@ pub async fn ai_save_key(
     http: tauri::State<'_, reqwest::Client>,
     provider: String,
     key: String,
-) -> Result<(), String> {
+) -> Result<()> {
     let provider = Online::parse(&provider)?;
     let key = key.trim();
     if key.is_empty() {
-        return Err("Pega tu key".into());
+        return Err(Code::EmptyKey.into());
     }
     match provider {
         Online::OpenAi => openai::ping(&http, key).await?,
@@ -108,7 +103,7 @@ pub async fn ai_save_key(
 }
 
 #[tauri::command]
-pub fn ai_delete_key(provider: String) -> Result<(), String> {
+pub fn ai_delete_key(provider: String) -> Result<()> {
     keys::delete(Online::parse(&provider)?)
 }
 
@@ -119,16 +114,16 @@ pub async fn ai_interpret(
     provider: String,
     model: String,
     context: prompt::Context,
-) -> Result<Value, String> {
+) -> Result<Value> {
     if provider == "local" {
-        let (_, path) = models::installed(&app, models::Kind::Llm)?
-            .ok_or_else(|| "Primero descarga el modelo local en Ajustes".to_string())?;
+        let (_, path) =
+            models::installed(&app, models::Kind::Llm)?.ok_or(Code::LocalModelMissing)?;
         let handle = app.clone();
         return tauri::async_runtime::spawn_blocking(move || {
             local::interpret(&handle.state::<Engines>(), path, &context)
         })
         .await
-        .map_err(|_| "El modelo local falló. Intenta de nuevo.".to_string())?;
+        .map_err(|_| Code::LocalModelFailed)?;
     }
 
     let online = Online::parse(&provider)?;
