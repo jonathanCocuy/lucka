@@ -875,7 +875,13 @@
       </header>
 
       <!-- ===== 0 · Intro ===== -->
-      <section class="scene" data-start="0" data-end="5" data-title="">
+      <section
+        class="scene"
+        data-start="0"
+        data-end="6.5"
+        data-span="5"
+        data-title=""
+      >
         <div class="intro">
           <h1 data-in="0.1">Lucka<span>.</span></h1>
           <p class="q" data-in="0.5">
@@ -890,15 +896,16 @@
             Next.js · React · TypeScript · Rust · Tauri · SQLite · whisper.cpp ·
             llama.cpp
           </div>
-          <p class="go" data-in="3.0">How it's built, in 100 seconds →</p>
+          <p class="go" data-in="3.0">How it's built, in about two minutes →</p>
         </div>
       </section>
 
       <!-- ===== 1 · Big picture ===== -->
       <section
         class="scene"
-        data-start="5"
-        data-end="17"
+        data-start="6.5"
+        data-end="23"
+        data-span="12"
         data-title="01 / 08 · The big picture"
       >
         <div class="left">
@@ -1105,8 +1112,9 @@
       <!-- ===== 2 · Why JavaScript ===== -->
       <section
         class="scene"
-        data-start="17"
-        data-end="27"
+        data-start="23"
+        data-end="36"
+        data-span="10"
         data-title="02 / 08 · Why JavaScript"
       >
         <div class="left">
@@ -1281,8 +1289,9 @@
       <!-- ===== 3 · Why Rust ===== -->
       <section
         class="scene"
-        data-start="27"
-        data-end="38"
+        data-start="36"
+        data-end="50.5"
+        data-span="11"
         data-title="03 / 08 · Why Rust"
       >
         <div class="left">
@@ -1418,8 +1427,9 @@
       <!-- ===== 4 · Data ===== -->
       <section
         class="scene"
-        data-start="38"
-        data-end="49"
+        data-start="50.5"
+        data-end="63.5"
+        data-span="11"
         data-title="04 / 08 · Where the data lives"
       >
         <div class="left">
@@ -1569,8 +1579,9 @@
       <!-- ===== 5 · Optimistic click ===== -->
       <section
         class="scene"
-        data-start="49"
-        data-end="59"
+        data-start="63.5"
+        data-end="77.5"
+        data-span="10"
         data-title="05 / 08 · One click, end to end"
       >
         <div class="left">
@@ -1752,8 +1763,9 @@
       <!-- ===== 6 · Voice ===== -->
       <section
         class="scene"
-        data-start="59"
-        data-end="73"
+        data-start="77.5"
+        data-end="96.5"
+        data-span="14"
         data-title="06 / 08 · Voice + local AI"
       >
         <div class="left">
@@ -1988,8 +2000,9 @@
       <!-- ===== 7 · Native ===== -->
       <section
         class="scene"
-        data-start="73"
-        data-end="83"
+        data-start="96.5"
+        data-end="109.5"
+        data-span="10"
         data-title="07 / 08 · Shipping native AI"
       >
         <div class="left">
@@ -2106,8 +2119,9 @@
       <!-- ===== 8 · Quality ===== -->
       <section
         class="scene"
-        data-start="83"
-        data-end="93"
+        data-start="109.5"
+        data-end="123.5"
+        data-span="10"
         data-title="08 / 08 · Guardrails &amp; releases"
       >
         <div class="left">
@@ -2296,7 +2310,13 @@
       </section>
 
       <!-- ===== 9 · Skills ===== -->
-      <section class="scene" data-start="93" data-end="101" data-title="">
+      <section
+        class="scene"
+        data-start="123.5"
+        data-end="134.5"
+        data-span="8"
+        data-title=""
+      >
         <div class="outro-title">
           <h2 data-in="0.1">What it took to build Lucka</h2>
           <p data-in="0.4">
@@ -2402,6 +2422,7 @@
         start: Number(el.dataset.start),
         end: Number(el.dataset.end),
         title: el.dataset.title,
+        span: Number(el.dataset.span),
         ins: [...el.querySelectorAll('[data-in]')],
         shows: [...el.querySelectorAll('[data-show]')],
         flows: [...el.querySelectorAll('[data-flow]')],
@@ -2440,11 +2461,13 @@
           const lt = t - s.start
           const out = s === last ? 1 : ease((s.end - t) / 0.4)
           s.el.style.opacity = String(Math.min(ease(lt / 0.4), out))
+          // Los tiempos se escribieron para data-span; se estiran al largo de la voz.
+          const at = (lt * s.span) / (s.end - s.start)
 
           for (const el of s.ins) {
-            const p = ease((lt - Number(el.dataset.in)) / 0.6)
+            const p = ease((at - Number(el.dataset.in)) / 0.6)
             const gone = el.dataset.out
-              ? 1 - ease((lt - Number(el.dataset.out)) / 0.4)
+              ? 1 - ease((at - Number(el.dataset.out)) / 0.4)
               : 1
             el.style.opacity = String(p * gone)
             el.style.transform = `translateY(${(1 - p) * 16}px)`
@@ -2452,13 +2475,13 @@
           for (const el of s.shows) {
             const [a, b = Infinity] = nums(el.dataset.show)
             el.style.opacity = String(
-              clamp((lt - a) / 0.15) * clamp((b - lt) / 0.15),
+              clamp((at - a) / 0.15) * clamp((b - at) / 0.15),
             )
           }
-          for (const el of s.flows) el.style.strokeDashoffset = String(-lt * 30)
+          for (const el of s.flows) el.style.strokeDashoffset = String(-at * 30)
           for (const { p, len } of s.draws) {
             const [a, d] = nums(p.dataset.draw)
-            const k = easeInOut((lt - a) / d)
+            const k = easeInOut((at - a) / d)
             p.style.strokeDasharray = String(len)
             p.style.strokeDashoffset = String(len * (1 - k))
             p.style.opacity = k > 0 ? '1' : '0'
@@ -2468,10 +2491,10 @@
           }
           for (const { c, track, len } of s.moves) {
             const [a, d] = nums(c.dataset.move)
-            const pt = track.getPointAtLength(easeInOut((lt - a) / d) * len)
+            const pt = track.getPointAtLength(easeInOut((at - a) / d) * len)
             c.setAttribute('transform', `translate(${pt.x} ${pt.y})`)
             c.style.opacity = String(
-              clamp((lt - a) / 0.15) * clamp((a + d + 0.3 - lt) / 0.3),
+              clamp((at - a) / 0.15) * clamp((a + d + 0.3 - at) / 0.3),
             )
           }
         })

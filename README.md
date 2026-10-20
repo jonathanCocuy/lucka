@@ -25,11 +25,11 @@ Local-first: your data lives in one file on your computer. No account, no server
 - **Customizable dashboard.** Drag, resize and hide widgets.
 - **Backups.** Export and import everything as JSON.
 
-## Architecture in 100 seconds
+## Architecture in two minutes
 
 [![Lucka architecture: layers, why JS and Rust, where data lives, voice + local AI, native builds, CI](docs/architecture-video/lucka-architecture.gif)](docs/architecture-video/lucka-architecture.mp4)
 
-_Preview. [Full video](docs/architecture-video/lucka-architecture.mp4) (1080p, 101 s): why JavaScript, why Rust, where the data lives, the voice pipeline with local AI, native builds and CI._
+_Preview. [Full video](docs/architecture-video/lucka-architecture.mp4) (1080p, 2:15, narrated): why JavaScript, why Rust, where the data lives, the voice pipeline with local AI, native builds and CI._
 
 ## Tech stack
 
