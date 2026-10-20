@@ -5,7 +5,9 @@
 A personal finance desktop app for macOS and Windows.
 Local-first: your data lives in one file on your computer. No account, no server, no cloud.
 
-<!-- Screenshot: docs/screenshot.png -->
+[![Voice entry: say what you spent, Lucka writes it down, you confirm before saving](docs/media/demo-voice-en.gif)](docs/media/demo-voice-en.mp4)
+
+_Voice entry in four steps. [Full-quality MP4](docs/media/demo-voice-en.mp4) (1080p, 21 s) · [En español](docs/media/demo-voice-es.mp4)._
 
 ## Download
 

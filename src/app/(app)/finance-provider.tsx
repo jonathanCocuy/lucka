@@ -277,7 +277,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           return addExpenseTo(s, {
             id: newId(),
             amount: status.pending,
-            description: status.fixed.name,
+            // The investment one has no name of its own: the lists show it translated.
+            description: status.fixed.isInvestment ? '' : status.fixed.name,
             date: toISODate(new Date()),
             target: { kind: 'fixed', id },
           })
