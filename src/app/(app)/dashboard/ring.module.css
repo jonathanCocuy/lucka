@@ -58,7 +58,7 @@
 
 .amount {
   margin: 0;
-  /* Relativo al anillo para que la cifra nunca lo toque. */
+  /* Relative to the ring so the number never touches it. */
   font-size: clamp(1.25rem, 12cqi, 2.25rem);
   font-weight: var(--weight-bold);
   line-height: 1.1;

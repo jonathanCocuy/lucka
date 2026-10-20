@@ -3,7 +3,7 @@ export type AiProviderId = 'local' | OnlineProviderId
 
 export interface AiProvider {
   id: AiProviderId
-  // Local: id del modelo descargado. En línea: id del modelo del proveedor.
+  // Local: id of the downloaded model. Online: the provider's model id.
   model: string
   isDefault: boolean
 }
@@ -16,12 +16,12 @@ export interface ModelOption {
 
 interface OnlineProvider {
   name: string
-  // Dónde saca la key el usuario.
+  // Where the user gets the key.
   keyUrl: string
   models: ModelOption[]
 }
 
-// Agregar un modelo aquí = sacar versión. El recomendado es el más rápido y barato.
+// Adding a model here = shipping a release. The recommended one is the fastest and cheapest.
 export const ONLINE_PROVIDERS: Record<OnlineProviderId, OnlineProvider> = {
   openai: {
     name: 'OpenAI (ChatGPT)',
@@ -55,8 +55,9 @@ export const ONLINE_PROVIDERS: Record<OnlineProviderId, OnlineProvider> = {
 
 export const ONLINE_IDS = Object.keys(ONLINE_PROVIDERS) as OnlineProviderId[]
 
-export function providerName(id: AiProviderId) {
-  return id === 'local' ? 'Modelo local' : ONLINE_PROVIDERS[id].name
+// `localModel` = the translated label for the local one.
+export function providerName(id: AiProviderId, localModel: string) {
+  return id === 'local' ? localModel : ONLINE_PROVIDERS[id].name
 }
 
 export function modelName(provider: AiProvider) {

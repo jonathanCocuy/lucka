@@ -10,7 +10,7 @@
   gap: var(--space-4);
 }
 
-/* Switch tipo pill: Gasto | Ingreso */
+/* Pill switch: Expense | Income */
 .segment {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -151,7 +151,7 @@
   color: var(--color-text-muted);
 }
 
-/* Listas dentro de modales */
+/* Lists inside modals */
 .table {
   display: flex;
   flex-direction: column;

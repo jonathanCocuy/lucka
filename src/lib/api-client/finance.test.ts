@@ -11,8 +11,8 @@ jest.mock('@/lib/local-db/fixed-expenses')
 jest.mock('@/lib/local-db/investment')
 jest.mock('@/lib/local-db/settings')
 
-const previous = [{ id: 'cat-1', name: 'Comida', budget: 0 }]
-const created = { id: 'cat-2', name: 'Regalos', budget: 50_000 }
+const previous = [{ id: 'cat-1', name: 'Food', budget: 0 }]
+const created = { id: 'cat-2', name: 'Gifts', budget: 5_000_000 }
 const expense = (id: string) => ({
   id,
   amount: 10_000,
@@ -22,8 +22,8 @@ const expense = (id: string) => ({
 })
 
 describe('addMany', () => {
-  it('si falla a mitad, borra lo que alcanzó a guardar y avisa el error', async () => {
-    const failure = new ApiClientError(422, 'Elige a qué va el gasto')
+  it('deletes what it saved and rethrows when an insert fails halfway', async () => {
+    const failure = new ApiClientError(422, 'pickTarget')
     jest.mocked(replaceCategories).mockResolvedValue(undefined)
     jest
       .mocked(addExpense)

@@ -5,8 +5,8 @@ import { DayPicker } from '@/components/ui/day-picker'
 import field from '@/components/ui/field.module.css'
 import { Icon } from '@/components/ui/icon'
 import { MoneyInput } from '@/components/ui/money-input'
-import { formatMoney } from '@/lib/finance/format'
 import type { FixedExpense } from '@/lib/finance/types'
+import { usePreferences } from '@/lib/i18n/context'
 import { newId } from '../finance-provider'
 import styles from './editor.module.css'
 
@@ -16,7 +16,9 @@ interface FixedEditorProps {
 }
 
 export function FixedEditor({ items, onChange }: FixedEditorProps) {
-  // Fila con el calendario abierto. Se abre debajo para no quedar cortado por el scroll.
+  const { t, money } = usePreferences()
+  const copy = t.fixedEditor
+  // Row with the day picker open. It opens below so the scroll doesn't cut it off.
   const [picking, setPicking] = useState<string | null>(null)
   const patch = (id: string, change: Partial<FixedExpense>) =>
     onChange(items.map(f => (f.id === id ? { ...f, ...change } : f)))
@@ -24,9 +26,9 @@ export function FixedEditor({ items, onChange }: FixedEditorProps) {
   return (
     <div className={styles.editor}>
       <div className={`${styles.row} ${styles.head} ${styles.fixedRow}`}>
-        <span>Nombre</span>
-        <span>Monto</span>
-        <span>Día de pago</span>
+        <span>{copy.name}</span>
+        <span>{copy.amount}</span>
+        <span>{copy.dueDay}</span>
         <span />
       </div>
       <div className={styles.list}>
@@ -35,18 +37,18 @@ export function FixedEditor({ items, onChange }: FixedEditorProps) {
             <div className={`${styles.row} ${styles.fixedRow}`}>
               {f.isInvestment ? (
                 <span className={styles.locked}>
-                  Inversión <small>desde inversiones</small>
+                  {t.common.investment} <small>{copy.fromInvestments}</small>
                 </span>
               ) : (
                 <input
                   className={field.input}
-                  placeholder="Ej. Arriendo"
+                  placeholder={copy.placeholder}
                   value={f.name}
                   onChange={e => patch(f.id, { name: e.target.value })}
                 />
               )}
               {f.isInvestment ? (
-                <span className={styles.locked}>{formatMoney(f.amount)}</span>
+                <span className={styles.locked}>{money(f.amount)}</span>
               ) : (
                 <MoneyInput
                   value={f.amount}
@@ -57,10 +59,10 @@ export function FixedEditor({ items, onChange }: FixedEditorProps) {
                 type="button"
                 className={styles.dayButton}
                 aria-expanded={picking === f.id}
-                aria-label={`Día de pago: ${f.dueDay}`}
+                aria-label={copy.dueDayOf(f.dueDay)}
                 onClick={() => setPicking(picking === f.id ? null : f.id)}
               >
-                Día {f.dueDay}
+                {t.common.day(f.dueDay)}
                 <Icon name="chevronDown" size={16} />
               </button>
               {f.isInvestment ? (
@@ -69,7 +71,7 @@ export function FixedEditor({ items, onChange }: FixedEditorProps) {
                 <button
                   type="button"
                   className={styles.remove}
-                  aria-label={`Quitar ${f.name}`}
+                  aria-label={t.common.removeItem(f.name)}
                   onClick={() => onChange(items.filter(x => x.id !== f.id))}
                 >
                   <Icon name="close" size={16} />
@@ -79,7 +81,7 @@ export function FixedEditor({ items, onChange }: FixedEditorProps) {
             {picking === f.id && (
               <div className={styles.dayPanel}>
                 <DayPicker
-                  label={`Día de pago de ${f.name || 'este gasto'}`}
+                  label={copy.pickDay(f.name)}
                   value={f.dueDay}
                   onChange={dueDay => {
                     patch(f.id, { dueDay })
@@ -98,7 +100,7 @@ export function FixedEditor({ items, onChange }: FixedEditorProps) {
           onChange([...items, { id: newId(), name: '', amount: 0, dueDay: 1 }])
         }
       >
-        <Icon name="plus" size={16} /> Agregar gasto fijo
+        <Icon name="plus" size={16} /> {copy.add}
       </button>
     </div>
   )

@@ -86,7 +86,7 @@
   margin: 0;
 }
 
-/* Rutas largas sin romper el layout. */
+/* Long paths without breaking the layout. */
 .path {
   overflow-wrap: anywhere;
 }

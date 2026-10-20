@@ -7,8 +7,8 @@ import { Icon } from '@/components/ui/icon'
 import { Modal } from '@/components/ui/modal'
 import { MoneyInput } from '@/components/ui/money-input'
 import { toISODate } from '@/lib/finance/calc'
-import { formatMoney } from '@/lib/finance/format'
 import type { ExpenseTarget } from '@/lib/finance/types'
+import { usePreferences } from '@/lib/i18n/context'
 import { newId, useFinance } from '../finance-provider'
 import styles from './forms.module.css'
 
@@ -23,17 +23,20 @@ interface RegisterModalProps {
 }
 
 export function RegisterModal(props: RegisterModalProps) {
+  const { t } = usePreferences()
   return (
-    <Modal open={props.open} onClose={props.onClose} title="Registrar">
-      {/* Se monta de cero en cada apertura: el form arranca limpio. */}
+    <Modal open={props.open} onClose={props.onClose} title={t.register.title}>
+      {/* Mounted fresh on every open: the form starts clean. */}
       <RegisterForm {...props} />
     </Modal>
   )
 }
 
-// Lo mínimo a la vista: monto + a dónde va. Descripción y fecha (hoy) quedan plegadas.
+// The minimum in view: amount + where it goes. Description and date (today) stay folded.
 function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
   const { summary, data, addExpense, addIncome, setCategories } = useFinance()
+  const { t, money, fixedName } = usePreferences()
+  const copy = t.register
   const [mode, setMode] = useState<Mode>('expense')
   const [amount, setAmount] = useState(0)
   const [description, setDescription] = useState('')
@@ -64,7 +67,7 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
     setTargetId(id)
     const status = summary.fixed.find(f => f.fixed.id === id)
     if (status && amount === 0) setAmount(status.pending)
-    if (status && !description) setDescription(status.fixed.name)
+    if (status && !description) setDescription(fixedName(status.fixed))
   }
 
   const saveExpense = async () => {
@@ -99,7 +102,7 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
 
   return (
     <form className={styles.form} onSubmit={submit}>
-      <div className={styles.segment} role="radiogroup" aria-label="Tipo">
+      <div className={styles.segment} role="radiogroup" aria-label={copy.type}>
         {(['expense', 'income'] as const).map(m => (
           <button
             key={m}
@@ -108,13 +111,13 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
             aria-checked={mode === m}
             onClick={() => setMode(m)}
           >
-            {m === 'expense' ? 'Gasto' : 'Ingreso'}
+            {m === 'expense' ? copy.expense : copy.income}
           </button>
         ))}
       </div>
 
       <MoneyInput
-        label="¿Cuánto?"
+        label={copy.howMuch}
         size="hero"
         autoFocus
         value={amount}
@@ -123,7 +126,7 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
 
       {isExpense && kind === 'category' && (
         <div className={styles.group}>
-          <p className={styles.groupLabel}>¿En qué?</p>
+          <p className={styles.groupLabel}>{copy.onWhat}</p>
           <div className={styles.options}>
             {data.categories.map(c => (
               <button
@@ -142,23 +145,23 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
               aria-pressed={isNew}
               onClick={() => setTargetId(NEW_CATEGORY)}
             >
-              + Nueva
+              {copy.newCategory}
             </button>
           </div>
           {isNew && (
             <div className={styles.row}>
               <label className={field.field}>
-                <span className={field.label}>Nombre</span>
+                <span className={field.label}>{copy.name}</span>
                 <input
                   className={field.input}
-                  placeholder="Ej. Regalos"
+                  placeholder={copy.namePlaceholder}
                   autoFocus
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                 />
               </label>
               <MoneyInput
-                label="Presupuesto (opcional)"
+                label={copy.budget}
                 value={newBudget}
                 onChange={setNewBudget}
               />
@@ -170,7 +173,7 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
               className={styles.switch}
               onClick={() => switchKind('fixed')}
             >
-              ¿Es un gasto fijo?
+              {copy.isFixed}
             </button>
           )}
         </div>
@@ -178,7 +181,7 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
 
       {isExpense && kind === 'fixed' && (
         <div className={styles.group}>
-          <p className={styles.groupLabel}>¿Qué fijo pagas?</p>
+          <p className={styles.groupLabel}>{copy.whichFixed}</p>
           <div className={styles.options}>
             {pendingFixed.map(({ fixed, pending }) => (
               <button
@@ -188,11 +191,11 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
                 aria-pressed={targetId === fixed.id}
                 onClick={() => pickFixed(fixed.id)}
               >
-                {fixed.name} <small>{formatMoney(pending)}</small>
+                {fixedName(fixed)} <small>{money(pending)}</small>
               </button>
             ))}
             {pendingFixed.length === 0 && (
-              <p className={styles.hint}>Todos los fijos están pagados.</p>
+              <p className={styles.hint}>{copy.allPaid}</p>
             )}
           </div>
           <button
@@ -200,28 +203,30 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
             className={styles.switch}
             onClick={() => switchKind('category')}
           >
-            Volver a categorías
+            {copy.backToCategories}
           </button>
         </div>
       )}
 
       <details className={styles.details}>
         <summary>
-          Más detalles
+          {copy.moreDetails}
           <Icon name="chevronDown" size={16} />
         </summary>
         <div className={styles.row}>
           <label className={field.field}>
-            <span className={field.label}>Descripción</span>
+            <span className={field.label}>{copy.description}</span>
             <input
               className={field.input}
-              placeholder={isExpense ? 'Ej. Cena con amigos' : 'Ej. Bono'}
+              placeholder={
+                isExpense ? copy.expensePlaceholder : copy.incomePlaceholder
+              }
               value={description}
               onChange={e => setDescription(e.target.value)}
             />
           </label>
           <label className={field.field}>
-            <span className={field.label}>Fecha</span>
+            <span className={field.label}>{copy.date}</span>
             <input
               className={field.input}
               type="date"
@@ -231,21 +236,17 @@ function RegisterForm({ initialTarget, onClose }: RegisterModalProps) {
             />
           </label>
         </div>
-        {!isExpense && (
-          <p className={styles.hint}>
-            Solo suma al disponible del ciclo en que cae la fecha.
-          </p>
-        )}
+        {!isExpense && <p className={styles.hint}>{copy.incomeHint}</p>}
       </details>
 
       {error && <p className={styles.error}>{error}</p>}
 
       <Button type="submit" block disabled={!valid || saving}>
         {saving
-          ? 'Guardando…'
+          ? t.common.saving
           : isExpense
-            ? 'Guardar gasto'
-            : 'Guardar ingreso'}
+            ? copy.saveExpense
+            : copy.saveIncome}
       </Button>
     </form>
   )

@@ -13,14 +13,15 @@ import {
   markPrompted,
   type LocalModel,
 } from '@/lib/api-client/ai'
-import { errorMessage } from '@/lib/api-client/http'
 import {
   ONLINE_IDS,
   ONLINE_PROVIDERS,
   type OnlineProviderId,
 } from '@/lib/ai/catalog'
+import { formatSize } from '@/lib/finance/format'
+import { usePreferences } from '@/lib/i18n/context'
 import forms from '../dashboard/forms.module.css'
-import { formatSize, type AiConfig } from './use-ai'
+import type { AiConfig } from './use-ai'
 import styles from './voice.module.css'
 
 export type SetupStep = 'intro' | 'provider' | 'whisper' | 'mic' | 'done'
@@ -33,24 +34,17 @@ interface AiSetupModalProps {
   onClose: () => void
 }
 
-const TITLES: Record<SetupStep, string> = {
-  intro: 'Registra hablando',
-  provider: 'Elige tu IA',
-  whisper: 'Modelo de voz',
-  mic: 'Micrófono',
-  done: '¡Listo!',
-}
-
 export function AiSetupModal(props: AiSetupModalProps) {
+  const { t } = usePreferences()
   const [step, setStep] = useState(props.startAt)
   return (
     <Modal
       open={props.open}
       onClose={props.onClose}
-      eyebrow="IA"
-      title={TITLES[step]}
+      eyebrow={t.aiSetup.eyebrow}
+      title={t.aiSetup.titles[step]}
     >
-      {/* Se monta de cero en cada apertura. */}
+      {/* Mounted fresh on every open. */}
       {props.open && <Steps {...props} step={step} setStep={setStep} />}
     </Modal>
   )
@@ -64,7 +58,9 @@ function Steps({
   onChange,
   onClose,
 }: AiSetupModalProps & { step: SetupStep; setStep: (s: SetupStep) => void }) {
-  // Quien ya tenía Whisper solo agregó otra IA: no hay que repetir el resto.
+  const { t } = usePreferences()
+  const copy = t.aiSetup
+  // Someone who already had Whisper only added another AI: no need to repeat the rest.
   const afterProvider = (): SetupStep =>
     !config.whisper ? 'whisper' : startAt === 'intro' ? 'mic' : 'done'
 
@@ -76,23 +72,17 @@ function Steps({
     }
     return (
       <div className={forms.form}>
-        <p className={styles.lead}>
-          Dile a Lucka en qué gastaste, por ejemplo: «20 mil en almuerzo y pagué
-          el arriendo». La IA lo entiende y tú solo confirmas.
-        </p>
-        <p className={forms.hint}>
-          Necesitas un modelo de voz (se baja una vez) y una IA: un modelo en tu
-          equipo o tu key de OpenAI, Claude o Gemini.
-        </p>
+        <p className={styles.lead}>{copy.introLead}</p>
+        <p className={forms.hint}>{copy.introHint}</p>
         <div className={styles.actions}>
           <Button type="button" onClick={() => answer(true)}>
-            Sí, configurar
+            {copy.yes}
           </Button>
           <Button type="button" variant="ghost" onClick={() => answer(false)}>
-            Ahora no
+            {t.common.notNow}
           </Button>
         </div>
-        <p className={forms.hint}>Puedes activarlo luego en Ajustes.</p>
+        <p className={forms.hint}>{copy.later}</p>
       </div>
     )
   }
@@ -112,13 +102,10 @@ function Steps({
   if (step === 'whisper') {
     return (
       <div className={forms.form}>
-        <p className={styles.lead}>
-          Convierte tu voz en texto. Corre en tu equipo: el audio nunca sale de
-          aquí.
-        </p>
+        <p className={styles.lead}>{copy.whisperLead}</p>
         <ModelPicker
           models={config.models.filter(m => m.kind === 'whisper')}
-          action="Descargar"
+          action={copy.download}
           onDone={async () => {
             await onChange()
             setStep('mic')
@@ -132,12 +119,9 @@ function Steps({
 
   return (
     <div className={forms.form}>
-      <p className={styles.lead}>
-        Toca el micrófono abajo a la derecha, di en qué gastaste y vuelve a
-        tocarlo. Antes de guardar te mostramos un resumen.
-      </p>
+      <p className={styles.lead}>{copy.doneLead}</p>
       <Button type="button" block onClick={onClose}>
-        Entendido
+        {copy.gotIt}
       </Button>
     </div>
   )
@@ -150,10 +134,12 @@ function ProviderStep({
   config: AiConfig
   onDone: () => Promise<void>
 }) {
+  const { t } = usePreferences()
+  const copy = t.aiSetup
   const [mode, setMode] = useState<'local' | 'online'>('local')
   return (
     <div className={forms.form}>
-      <div className={forms.segment} role="radiogroup" aria-label="Tipo de IA">
+      <div className={forms.segment} role="radiogroup" aria-label={copy.aiType}>
         {(['local', 'online'] as const).map(m => (
           <button
             key={m}
@@ -162,19 +148,18 @@ function ProviderStep({
             aria-checked={mode === m}
             onClick={() => setMode(m)}
           >
-            {m === 'local' ? 'En mi equipo' : 'Con mi key'}
+            {m === 'local' ? copy.local : copy.online}
           </button>
         ))}
       </div>
       {mode === 'local' ? (
         <>
           <div className={styles.note}>
-            <strong>100% privado.</strong> Todo se procesa en este equipo, sin
-            internet. Ocupa espacio en disco y tarda unos segundos por frase.
+            <strong>{copy.privateTitle}</strong> {copy.privateText}
           </div>
           <ModelPicker
             models={config.models.filter(m => m.kind === 'llm')}
-            action="Descargar y usar"
+            action={copy.downloadAndUse}
             onDone={async id => {
               await addLocalProvider(id)
               await onDone()
@@ -189,6 +174,8 @@ function ProviderStep({
 }
 
 function OnlineForm({ onDone }: { onDone: () => Promise<void> }) {
+  const { t, error: errorFor } = usePreferences()
+  const copy = t.aiSetup
   const [provider, setProvider] = useState<OnlineProviderId>('anthropic')
   const info = ONLINE_PROVIDERS[provider]
   const recommended = (id: OnlineProviderId) =>
@@ -213,7 +200,7 @@ function OnlineForm({ onDone }: { onDone: () => Promise<void> }) {
         await addOnlineProvider(provider, model, key)
         await onDone()
       } catch (err) {
-        setError(errorMessage(err))
+        setError(errorFor(err))
       }
     })
   }
@@ -221,7 +208,7 @@ function OnlineForm({ onDone }: { onDone: () => Promise<void> }) {
   return (
     <form className={forms.form} onSubmit={submit}>
       <div className={forms.group}>
-        <p className={forms.groupLabel}>Proveedor</p>
+        <p className={forms.groupLabel}>{copy.provider}</p>
         <div className={forms.options}>
           {ONLINE_IDS.map(id => (
             <button
@@ -238,7 +225,7 @@ function OnlineForm({ onDone }: { onDone: () => Promise<void> }) {
       </div>
 
       <div className={forms.group}>
-        <p className={forms.groupLabel}>Modelo</p>
+        <p className={forms.groupLabel}>{copy.model}</p>
         <div className={forms.options}>
           {info.models.map(m => (
             <button
@@ -248,37 +235,34 @@ function OnlineForm({ onDone }: { onDone: () => Promise<void> }) {
               aria-pressed={model === m.id}
               onClick={() => setModel(m.id)}
             >
-              {m.name} {m.recommended && <small>Recomendado</small>}
+              {m.name} {m.recommended && <small>{t.common.recommended}</small>}
             </button>
           ))}
         </div>
       </div>
 
       <label className={field.field}>
-        <span className={field.label}>API key</span>
+        <span className={field.label}>{copy.keyLabel}</span>
         <input
           className={field.input}
           type="password"
           autoComplete="off"
           spellCheck={false}
-          placeholder="Pega tu key aquí"
+          placeholder={copy.keyPlaceholder}
           value={key}
           onChange={e => setKey(e.target.value)}
         />
-        <span className={forms.hint}>La consigues en {info.keyUrl}</span>
+        <span className={forms.hint}>{copy.keyWhere(info.keyUrl)}</span>
       </label>
 
       <div className={styles.note}>
-        <strong>Tu key está segura.</strong>
+        <strong>{copy.keySafe}</strong>
         <ul>
-          <li>Se guarda en el llavero de tu sistema, no en Lucka.</li>
-          <li>No va en el archivo de datos ni en los respaldos.</li>
-          <li>Solo se usa para hablar con {info.name}. Nadie más la ve.</li>
+          <li>{copy.keychain}</li>
+          <li>{copy.notInBackups}</li>
+          <li>{copy.onlyFor(info.name)}</li>
         </ul>
-        <span>
-          Ojo: el texto de lo que dices y los nombres de tus categorías se
-          envían a {info.name} para entenderlos. El audio no sale de tu equipo.
-        </span>
+        <span>{copy.sentTo(info.name)}</span>
       </div>
 
       {error && (
@@ -287,13 +271,13 @@ function OnlineForm({ onDone }: { onDone: () => Promise<void> }) {
         </p>
       )}
       <Button type="submit" block disabled={!key.trim() || saving}>
-        {saving ? 'Probando la key…' : 'Probar y guardar'}
+        {saving ? copy.testing : copy.testAndSave}
       </Button>
     </form>
   )
 }
 
-// Lista de modelos de un tipo. Si ya hay uno en disco, se usa sin bajar nada.
+// Models of one kind. If one is already on disk, it's used without downloading anything.
 function ModelPicker({
   models,
   action,
@@ -303,6 +287,8 @@ function ModelPicker({
   action: string
   onDone: (id: string) => Promise<void>
 }) {
+  const { t, prefs, error: errorFor } = usePreferences()
+  const copy = t.aiSetup
   const installed = models.find(m => m.installed)
   const [selected, setSelected] = useState(
     () => installed?.id ?? models.find(m => m.recommended)?.id ?? '',
@@ -322,7 +308,7 @@ function ModelPicker({
         }
         await onDone(selected)
       } catch (err) {
-        setError(errorMessage(err))
+        setError(errorFor(err))
       } finally {
         setProgress(null)
       }
@@ -342,8 +328,10 @@ function ModelPicker({
           >
             {m.name}{' '}
             <small>
-              {m.installed ? 'Descargado' : formatSize(m.size)}
-              {m.recommended && ' · Recomendado'}
+              {m.installed
+                ? copy.downloaded
+                : formatSize(m.size, prefs.language)}
+              {m.recommended && ` · ${t.common.recommended}`}
             </small>
           </button>
         ))}
@@ -362,20 +350,22 @@ function ModelPicker({
       <Button type="button" block disabled={!model || busy} onClick={run}>
         {busy
           ? progress !== null
-            ? 'Descargando…'
-            : 'Guardando…'
+            ? copy.downloading
+            : t.common.saving
           : model?.installed
-            ? 'Usar este'
+            ? copy.useThis
             : action}
       </Button>
       {installed && model && model.id !== installed.id && (
-        <p className={forms.hint}>Reemplaza a {installed.name}.</p>
+        <p className={forms.hint}>{copy.replaces(installed.name)}</p>
       )}
     </div>
   )
 }
 
 function MicStep({ onDone }: { onDone: () => void }) {
+  const { t, error: errorFor } = usePreferences()
+  const copy = t.aiSetup
   const [error, setError] = useState<string | null>(null)
   const [busy, startBusy] = useTransition()
   const test = () =>
@@ -385,22 +375,19 @@ function MicStep({ onDone }: { onDone: () => void }) {
         await checkMic()
         onDone()
       } catch (err) {
-        setError(errorMessage(err))
+        setError(errorFor(err))
       }
     })
   return (
     <div className={forms.form}>
-      <p className={styles.lead}>
-        Lucka necesita permiso para usar el micrófono. Tu sistema te lo va a
-        pedir ahora.
-      </p>
+      <p className={styles.lead}>{copy.micLead}</p>
       {error && (
         <p className={forms.error} role="alert">
           {error}
         </p>
       )}
       <Button type="button" block disabled={busy} onClick={test}>
-        {busy ? 'Escuchando…' : 'Dar permiso y probar'}
+        {busy ? copy.listening : copy.allow}
       </Button>
     </div>
   )

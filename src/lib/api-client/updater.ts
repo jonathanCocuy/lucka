@@ -3,7 +3,7 @@ import { check, type Update } from '@tauri-apps/plugin-updater'
 
 export type { Update }
 
-// Sin internet o sin Release: la app sigue normal, sin aviso.
+// No internet or no Release: the app carries on with no notice.
 export async function findUpdate(): Promise<Update | null> {
   try {
     return await check()

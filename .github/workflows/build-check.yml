@@ -1,7 +1,7 @@
 name: Build check
 
-# El build real de macOS y Windows, sin publicar. Atrapa en el PR lo que
-# antes solo fallaba al mergear (librerías nativas, firma, empaquetado).
+# The real macOS and Windows build, without publishing. Catches in the PR what
+# used to fail only after merging (native libraries, signing, packaging).
 on:
   pull_request:
     branches: [feedback, staging, main]
@@ -50,7 +50,7 @@ jobs:
         with:
           targets: ${{ matrix.rust-targets }}
 
-      - name: 💾 Cache de Rust
+      - name: 💾 Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
@@ -58,15 +58,15 @@ jobs:
       - name: 📦 Install
         run: pnpm install --frozen-lockfile
 
-      # Sin artefactos del updater: no hace falta la llave de firma en el PR.
+      # No updater artifacts: the PR doesn't need the signing key.
       - name: 🏗️ Build
         shell: bash
         run: >
           pnpm tauri build ${{ matrix.args }}
           --config '{"bundle":{"createUpdaterArtifacts":false}}'
 
-      # Abrir la app atrapa librerías que faltan o que macOS rechaza (firma).
-      - name: 🍎 Firma y arranque
+      # Launching the app catches missing libraries or ones macOS rejects (signing).
+      - name: 🍎 Signature and launch
         if: runner.os == 'macOS'
         run: |
           app=src-tauri/target/universal-apple-darwin/release/bundle/macos/Lucka.app
@@ -74,20 +74,20 @@ jobs:
           "$app/Contents/MacOS/lucka" &
           sleep 15
           if ! kill -0 $! 2>/dev/null; then
-            echo "La app se cerró al arrancar"
+            echo "The app quit on launch"
             exit 1
           fi
           kill $!
 
-      - name: 🪟 Instalar y arrancar
+      - name: 🪟 Install and launch
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $setup = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
           Start-Process $setup.FullName -ArgumentList '/S' -Wait
           $exe = Get-ChildItem "$env:LOCALAPPDATA" -Recurse -Filter lucka.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $exe) { throw 'No se encontró lucka.exe instalado' }
+          if (-not $exe) { throw 'Installed lucka.exe not found' }
           $proc = Start-Process $exe.FullName -PassThru
           Start-Sleep -Seconds 15
-          if ($proc.HasExited) { throw "La app se cerró al arrancar (código $($proc.ExitCode))" }
+          if ($proc.HasExited) { throw "The app quit on launch (code $($proc.ExitCode))" }
           Stop-Process $proc

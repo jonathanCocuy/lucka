@@ -1,10 +1,13 @@
+'use client'
+
 import { Stat } from '@/components/ui/stat'
 import type { Summary } from '@/lib/finance/calc'
-import { formatMoney } from '@/lib/finance/format'
+import { usePreferences } from '@/lib/i18n/context'
 import styles from './available-panel.module.css'
 import { Ring } from './ring'
 
 export function AvailablePanel({ summary }: { summary: Summary }) {
+  const { t, money } = usePreferences()
   const free = Math.max(summary.available, 0)
   return (
     <>
@@ -18,26 +21,26 @@ export function AvailablePanel({ summary }: { summary: Summary }) {
         <Stat
           label={
             <>
-              <i className={styles.dotSpent} /> Gastado
+              <i className={styles.dotSpent} /> {t.available.spent}
             </>
           }
-          value={formatMoney(summary.spent)}
+          value={money(summary.spent)}
         />
         <Stat
           label={
             <>
-              <i className={styles.dotCommitted} /> Comprometido
+              <i className={styles.dotCommitted} /> {t.available.committed}
             </>
           }
-          value={formatMoney(summary.committed)}
+          value={money(summary.committed)}
         />
         <Stat
           label={
             <>
-              <i className={styles.dotFree} /> Libre
+              <i className={styles.dotFree} /> {t.available.free}
             </>
           }
-          value={formatMoney(free)}
+          value={money(free)}
           tone={free > 0 ? 'positive' : 'default'}
         />
       </dl>

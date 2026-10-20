@@ -28,6 +28,7 @@ Core principles:
 - **Local-first.** One SQLite file on the user's machine. No server, no account, no cloud.
 - **Private by default.** Data never leaves the computer. The only opt-in exception is voice entry with an online AI provider (see [§6](#6-ai-and-voice)).
 - **Web UI, native shell.** The UI is a static Next.js site. Tauri wraps it in a native window and exposes a small, permission-scoped Rust API.
+- **Two languages, two currencies.** English or Spanish, US dollars or Colombian pesos. Picked on first launch.
 
 Origin: Lucka started as a Next.js + Supabase web app with login and end-to-end encryption.
 It was ported to desktop by removing auth, encryption and the server, and turning SQLite into the "backend".
@@ -73,7 +74,8 @@ flowchart TB
 | `src/app/`                | Routes. Single-use components live next to their route.                                  |
 | `src/app/(app)/`          | The app: onboarding, dashboard, editors, settings, voice.                                |
 | `src/components/ui/`      | Shared UI: button, modal, money input, day picker, progress, icons.                      |
-| `src/lib/finance/`        | Domain types, input validation and pure calculations.                                    |
+| `src/lib/finance/`        | Domain types, input validation, pure calculations and money formatting.                  |
+| `src/lib/i18n/`           | Every text in the app (`en.ts`, `es.ts`), languages and currencies.                      |
 | `src/lib/api-client/`     | What the UI calls. Business rules, errors, Tauri calls.                                  |
 | `src/lib/local-db/`       | One file per table. **The only place with SQL.**                                         |
 | `src/lib/ai/`             | AI provider catalog and the AI-output → draft resolver.                                  |
@@ -125,7 +127,7 @@ Details that matter:
 
 - `src/lib/finance/validate.ts` returns a `Result<T>` (`{ ok: true, value } | { ok: false, error }`). No exceptions for expected errors.
 - Input is treated as `unknown`. Money must be a safe integer, days 1–31, ids UUIDs, dates `YYYY-MM-DD`.
-- Messages are user-facing Spanish strings, shown as-is.
+- Errors are codes (`ErrorCode`), not text. The UI translates them (`errorText` in `src/lib/api-client/http.ts`).
 - The same validators are reused by the backup importer ([§5](#backup-json)).
 
 ### Domain logic (`src/lib/finance/calc.ts`)
@@ -151,6 +153,21 @@ The financial month runs **from payday to payday**, not calendar month.
 - `src/lib/dashboard/layout.ts` holds the pure functions (`move`, `hide`, `show`, `resize`, `snapSize`).
 - The layout is a UI preference, so it lives in `localStorage`, not SQLite.
 - `loadLayout()` sanitizes whatever it reads: unknown widgets are dropped, missing ones are added, broken JSON falls back to the default.
+
+### Languages and money
+
+- `src/lib/i18n/en.ts` holds every text. `es.ts` is typed against it, so a missing key fails the build.
+  - Texts with values are functions (`daysToPayday(n)`). Errors are templates (`'{provider} rejected the key…'`).
+  - No i18n library and no `[lang]` routes: the export is static and the language is a saved preference.
+- `PreferencesProvider` (`src/app/(app)/preferences-provider.tsx`) loads `{ language, currency }` from SQLite.
+  - Nothing renders until it knows them: no flash of the wrong language.
+  - No row yet → the system language picks (`es-*` → Spanish, else English), and the currency follows it.
+  - `usePreferences()` gives `t` (the dictionary), `money(cents)`, `date(d)`, `error(e)` and the setters.
+- Money is **integer cents** for both currencies.
+  - `formatMoney` (`src/lib/finance/format.ts`): separators follow the language, decimals follow the currency. COP shows none; USD shows them only when there are some.
+  - `MoneyInput` keeps what's being typed ("4.") while it still means the value, so decimals can be typed.
+- The onboarding opens with a language and currency step. Settings can change both.
+  - The currency locks once there's any expense or income (`savePreferences` → 409 `currencyLocked`). There's no exchange rate to convert old records.
 
 ### Styling
 
@@ -196,15 +213,15 @@ Least privilege. The webview only gets:
 
 | Command                           | What it does                                           |
 | --------------------------------- | ------------------------------------------------------ |
-| `voice_start` / `voice_stop`      | Record from the mic; stop returns the transcript       |
+| `voice_start` / `voice_stop`      | Record from the mic; stop transcribes in `language`    |
 | `voice_check_mic`                 | Record 0.7 s to trigger the OS permission prompt       |
 | `models_status`                   | Catalog of local models and which are installed        |
 | `model_download` / `model_delete` | Manage local models on disk                            |
 | `ai_save_key` / `ai_delete_key`   | Validate and store / remove an API key in the keychain |
 | `ai_interpret`                    | Turn a transcript into structured records              |
 
-- Every command returns `Result<T, String>`. The error string is already user-facing Spanish.
-- The front wraps `invoke` in one helper (`call` in `src/lib/api-client/ai.ts`) that converts errors into `ApiClientError`.
+- Every command returns `Result<T, AppError>` (`src-tauri/src/error.rs`): a code plus an optional provider name or HTTP status. No text in Rust.
+- The front wraps `invoke` in one helper (`call` in `src/lib/api-client/ai.ts`). `nativeError` turns the payload into an `ApiClientError`; unknown codes get the generic message.
 
 ### Auto-update
 
@@ -247,6 +264,7 @@ Settings shows the exact path.
 
 | Table              | Holds                                                 |
 | ------------------ | ----------------------------------------------------- |
+| `preferences`      | One row. Language and currency                        |
 | `finance_settings` | One row. Name, income, payday, onboarding state       |
 | `fixed_expenses`   | Rent, internet, investment contribution… Soft-deleted |
 | `categories`       | Budget categories. Soft-deleted                       |
@@ -266,7 +284,7 @@ The database enforces the rules, not only the app:
 
 Conventions:
 
-- Money is `INTEGER` pesos (COP has no cents in practice).
+- Money is `INTEGER` **cents** for every currency. Migration 0003 multiplied the old whole-peso amounts by 100.
 - Dates are `TEXT`: `YYYY-MM-DD` for days, ISO 8601 for instants.
 - IDs are UUIDs generated in the front (`crypto.randomUUID()`), so optimistic state and the DB share ids.
 - **Soft delete** (`archived_at`) for fixed expenses and categories: old expenses still point to them.
@@ -274,9 +292,10 @@ Conventions:
 
 ### Migrations
 
-- Files in `src-tauri/migrations/` (`0001_init.sql`, `0002_ai_providers.sql`), embedded with `include_str!`.
-- Registered in `lib.rs` with an increasing version. They run when the DB opens.
-- A published migration is **never edited**: it already ran on users' machines.
+- Files in `src-tauri/migrations/` (`0001_init.sql` … `0003_preferences.sql`), embedded with `include_str!`.
+- Registered in `lib.rs` with an increasing version. They run when the DB opens, each one inside a transaction (sqlx).
+- A published migration is **never edited**, not even a comment: sqlx checks its checksum and refuses to open the database if it changed.
+- `0003_preferences.sql` is one-way: an older app version can't open a database that ran it.
 
 ### SQL lives in one place
 
@@ -300,10 +319,11 @@ Settings → Export / Import / Delete all.
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "exportedAt": "2026-10-14T18:00:00.000Z",
   "data": {
-    "profile": { "name": "…", "monthlyIncome": 0, "payday": 30 },
+    "preferences": { "language": "en", "currency": "USD" },
+    "profile": { "name": "…", "monthlyIncome": 420000, "payday": 30 },
     "onboarded": true,
     "investment": null,
     "fixed": [],
@@ -314,6 +334,7 @@ Settings → Export / Import / Delete all.
 }
 ```
 
+- Amounts are cents. Version 1 files (whole pesos, no preferences) still import: amounts ×100, Spanish and COP.
 - Includes archived fixed expenses and categories: old expenses reference them.
 - Import validates shape, `version`, every row, orphan expenses and the "one active investment" rule. Then it replaces everything.
 - `ai_providers` and keys are excluded: they depend on the machine.
@@ -339,9 +360,9 @@ sequenceDiagram
   U->>UI: Click, speak, click
   UI->>R: voice_start / voice_stop
   R->>R: cpal capture → mono → resample 16 kHz
-  R->>W: transcribe (Spanish)
+  R->>W: transcribe (app language)
   W-->>UI: text
-  UI->>R: ai_interpret(text, today, categories, pending fixed)
+  UI->>R: ai_interpret(text, today, categories, pending fixed, language, currency)
   R->>L: system prompt + JSON schema
   L-->>R: JSON
   R-->>UI: JSON (parsed, shape not trusted)
@@ -356,7 +377,7 @@ sequenceDiagram
 - `cpal` captures the default mic on its own thread (its stream is not `Send` on every OS).
 - Channels are mixed to mono inside the callback; then linear resampling to 16 kHz (what Whisper expects).
 - Guards: < 0.5 s → "didn't hear you"; all-zero samples → macOS silently denied the mic permission; 120 s cap.
-- `whisper-rs` (whisper.cpp, Metal on macOS), language fixed to Spanish. **Audio never leaves the machine.**
+- `whisper-rs` (whisper.cpp, Metal on macOS), in the app's language (`en` or `es`). **Audio never leaves the machine.**
 
 ### Text to records
 
@@ -370,18 +391,24 @@ One prompt and **one JSON schema** (`src-tauri/src/ai/prompt.rs`) for all four p
 | Gemini    | `responseJsonSchema` + `application/json`                                         |
 
 - The schema has every field required and no nulls ("no data" = `""` or `0`). OpenAI strict mode and the local grammar both need that.
-- The prompt handles Colombian money slang ("20 mil", "una luca", "1,5 millones") and relative dates ("ayer", "el lunes").
-- Context sent: today's date, category names, names of **pending** fixed expenses, and the transcript.
+- The prompt adapts to the language and the currency:
+  - COP: Colombian slang ("20 mil", "una luca", "1,5 millones"). USD: "20 bucks", "$4.50", "a grand".
+  - One worked example in the person's language, with amounts in their currency.
+  - Descriptions and new category names come back in the app's language.
+- Amounts come back as whole money units (`number`, decimals for dollars). `resolve.ts` turns them into cents.
+- Context sent: today's date, category names, names of **pending** fixed expenses, the transcript, language and currency.
 - Rust only checks that the answer is JSON. The **front** validates the shape.
 
 ### Resolving the answer (`src/lib/ai/resolve.ts`)
 
-The AI speaks in names; the DB stores ids. `resolve()` bridges them and never trusts the input:
+The AI speaks in names and whole money; the DB stores ids and cents. `resolve()` bridges them and never trusts the input:
 
 - Matches categories ignoring accents and case (`"Café"` = `"cafe "`).
 - Unknown category → proposes a new one (once, even if mentioned twice), with the budget the user asked for.
 - Fixed expense without amount → uses what's pending. Already paid or unknown → warning, skipped.
-- Invalid amount, unknown type or bad date → warning or today's date.
+- Amounts → cents. Pesos are rounded to whole pesos first. Negative, not a number or too big → warning.
+- Unknown type or bad date → warning or today's date.
+- Warnings are data (`{ kind, label }`), shown in the app's language by the summary modal.
 - The user reviews everything in the summary modal before anything is saved.
 
 ### Local models
@@ -497,7 +524,7 @@ The repo encodes the rules so any agent (or human) follows them, and **tooling e
 
 ### Rules
 
-- `AGENTS.md` (Spanish): writing style, plan format, testing policy, stack, CSS, DB, git, banned things, definition of done.
+- `AGENTS.md`: writing style, plan format, testing policy, stack, CSS, DB, git, banned things, definition of done.
 - `CLAUDE.md` just imports `AGENTS.md`, so every tool reads the same source.
 - `docs/writing-style.md`: short examples of good vs bad plans, comments and commits.
 
@@ -544,15 +571,17 @@ An agent can't skip one layer to get code into `main`.
 - Jest, Node environment. Test files live next to the code (`calc.ts` → `calc.test.ts`).
 - Only logic with real branches is tested. Components that only render, wrappers and libraries are not.
 - Cases are chosen with the user before writing them (`test-planner` agent).
-- Tests are named in Spanish after the expected behavior.
+- Tests are named after the expected behavior.
 
 | File                         | Covers                                                                       |
 | ---------------------------- | ---------------------------------------------------------------------------- |
 | `finance/calc.test.ts`       | Extra income counts only in its own pay cycle, including the payday boundary |
-| `ai/resolve.test.ts`         | Category matching, new categories, fixed expenses, invalid items, dates      |
+| `ai/resolve.test.ts`         | Category matching, new categories, fixed expenses, amounts to cents, dates   |
 | `api-client/finance.test.ts` | `addMany` rolls back what it saved when an insert fails                      |
+| `api-client/ai.test.ts`      | Rust error codes become text, with the provider; unknown codes → generic     |
 | `dashboard/layout.test.ts`   | Reorder, hide, snap size                                                     |
-| `local-db/*.test.ts`         | 404 / 409 / 422 business errors with a mocked `Db`                           |
+| `i18n/locale.test.ts`        | First language from the system                                               |
+| `local-db/*.test.ts`         | 404 / 409 / 422 business errors with a mocked `Db`, currency lock            |
 
 ---
 
@@ -565,7 +594,8 @@ An agent can't skip one layer to get code into `main`.
 | Next.js as a static site  | Reuse the existing web UI                | No server features at all                        |
 | llama.cpp as dynamic libs | ggml symbol clash with Whisper           | Custom staging script + entitlements             |
 | Layout in `localStorage`  | UI preference, not financial data        | Not included in backups                          |
-| Spanish UI, COP integers  | Built for Colombia                       | No i18n or decimals yet                          |
+| No exchange rates         | Offline, no server                       | The currency locks once there are records        |
+| Mic prompt follows macOS  | `InfoPlist.strings` is per system locale | It can differ from the app's language            |
 | No Linux build            | Scope                                    | Could be added to the matrix later               |
 
 ---

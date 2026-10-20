@@ -10,11 +10,12 @@ import type {
   DraftItem,
   DraftTarget,
   NewCategory,
+  Warning,
 } from '@/lib/ai/resolve'
 import { normalize } from '@/lib/ai/resolve'
 import { parseISODate } from '@/lib/finance/calc'
-import { formatShortDate } from '@/lib/finance/format'
 import type { Category, Expense } from '@/lib/finance/types'
+import { usePreferences } from '@/lib/i18n/context'
 import forms from '../dashboard/forms.module.css'
 import { newId, useFinance } from '../finance-provider'
 import styles from './voice.module.css'
@@ -25,13 +26,7 @@ interface VoiceSummaryModalProps {
   onClose: () => void
 }
 
-const KIND_LABEL: Record<DraftItem['kind'], string> = {
-  expense: 'Gasto',
-  fixed: 'Gasto fijo',
-  income: 'Ingreso',
-}
-
-// "c:<id>" = categoría existente, "n:<nombre>" = nueva.
+// "c:<id>" = existing category, "n:<name>" = new one.
 const targetValue = (t: DraftTarget) =>
   t.kind === 'category' ? `c:${t.id}` : `n:${t.name}`
 const parseTarget = (v: string): DraftTarget =>
@@ -45,15 +40,25 @@ export function VoiceSummaryModal({
   onClose,
 }: VoiceSummaryModalProps) {
   const { data, addMany } = useFinance()
+  const { t, money, date, fixedName: labelOf } = usePreferences()
+  const copy = t.summary
   const [items, setItems] = useState(draft.items)
   const [newCategories, setNewCategories] = useState(draft.newCategories)
   const [error, setError] = useState<string | null>(null)
   const [saving, startSaving] = useTransition()
   if (!data) return null
 
-  const fixedName = (id: string) =>
-    data.fixed.find(f => f.id === id)?.name ?? 'Gasto fijo'
-  // Solo las nuevas que algún gasto sigue usando.
+  const fixedName = (id: string) => {
+    const fixed = data.fixed.find(f => f.id === id)
+    return fixed ? labelOf(fixed) : copy.kinds.fixed
+  }
+  const warningText = (w: Warning) => {
+    if (w.kind === 'notUnderstood') return copy.warnings.notUnderstood
+    if (w.kind === 'noCategory')
+      return copy.warnings.noCategory(money(w.amount))
+    return copy.warnings[w.kind](w.label || copy.anItem)
+  }
+  // Only the new ones some expense still uses.
   const usedNew = newCategories.filter(c =>
     items.some(
       i =>
@@ -117,20 +122,26 @@ export function VoiceSummaryModal({
     })
 
   return (
-    <Modal open onClose={onClose} eyebrow="Por voz" title="¿Guardo esto?" wide>
+    <Modal
+      open
+      onClose={onClose}
+      eyebrow={copy.eyebrow}
+      title={copy.title}
+      wide
+    >
       <div className={forms.form}>
-        <p className={styles.heard}>«{heard}»</p>
+        <p className={styles.heard}>{t.common.quote(heard)}</p>
 
         {draft.warnings.length > 0 && (
           <ul className={styles.warnings}>
-            {draft.warnings.map(w => (
-              <li key={w}>{w}</li>
+            {draft.warnings.map((w, i) => (
+              <li key={i}>{warningText(w)}</li>
             ))}
           </ul>
         )}
 
         {items.length === 0 ? (
-          <p className={forms.hint}>No quedó nada para guardar.</p>
+          <p className={forms.hint}>{copy.nothingLeft}</p>
         ) : (
           <ul className={styles.items}>
             {items.map((item, index) => (
@@ -140,17 +151,17 @@ export function VoiceSummaryModal({
                     {item.description ||
                       (item.kind === 'fixed'
                         ? fixedName(item.fixedId)
-                        : KIND_LABEL[item.kind])}
+                        : copy.kinds[item.kind])}
                   </span>
                   <span className={styles.itemMeta}>
                     <span className={styles.tag} data-kind={item.kind}>
-                      {KIND_LABEL[item.kind]}
+                      {copy.kinds[item.kind]}
                     </span>
                     {item.kind === 'fixed' && fixedName(item.fixedId)}
                     {item.kind === 'expense' && (
                       <select
                         className={styles.select}
-                        aria-label="Categoría"
+                        aria-label={copy.category}
                         value={targetValue(item.target)}
                         onChange={e =>
                           update(index, { target: parseTarget(e.target.value) })
@@ -163,12 +174,12 @@ export function VoiceSummaryModal({
                         ))}
                         {newCategories.map(c => (
                           <option key={c.name} value={`n:${c.name}`}>
-                            {c.name} (nueva)
+                            {copy.newCategory(c.name)}
                           </option>
                         ))}
                       </select>
                     )}
-                    <span>{formatShortDate(parseISODate(item.date))}</span>
+                    <span>{date(parseISODate(item.date))}</span>
                   </span>
                 </div>
                 <MoneyInput
@@ -178,7 +189,7 @@ export function VoiceSummaryModal({
                 <button
                   type="button"
                   className={styles.remove}
-                  aria-label="Quitar"
+                  aria-label={t.common.remove}
                   onClick={() =>
                     setItems(prev => prev.filter((_, i) => i !== index))
                   }
@@ -192,12 +203,12 @@ export function VoiceSummaryModal({
 
         {usedNew.length > 0 && (
           <div className={forms.group}>
-            <p className={forms.groupLabel}>Categorías nuevas</p>
+            <p className={forms.groupLabel}>{copy.newCategories}</p>
             {usedNew.map(c => (
               <div key={c.name} className={styles.newCategory}>
                 <span>{c.name}</span>
                 <MoneyInput
-                  label="Presupuesto (opcional)"
+                  label={copy.budget}
                   value={c.budget}
                   onChange={budget => setBudget(c.name, budget)}
                 />
@@ -213,12 +224,10 @@ export function VoiceSummaryModal({
         )}
         <div className={styles.actions}>
           <Button type="button" disabled={!valid || saving} onClick={save}>
-            {saving
-              ? 'Guardando…'
-              : `Guardar ${items.length === 1 ? '1 registro' : `${items.length} registros`}`}
+            {saving ? t.common.saving : copy.save(items.length)}
           </Button>
           <Button type="button" variant="ghost" onClick={onClose}>
-            Descartar
+            {copy.discard}
           </Button>
         </div>
       </div>

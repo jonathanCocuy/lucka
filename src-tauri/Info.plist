@@ -3,6 +3,12 @@
 <plist version="1.0">
 <dict>
   <key>NSMicrophoneUsageDescription</key>
-  <string>Lucka usa el micrófono para que registres tus gastos hablando. El audio se procesa en este equipo.</string>
+  <string>Lucka uses the microphone so you can record expenses by talking. The audio is processed on this computer.</string>
+  <!-- macOS picks es.lproj (see tauri.macos.conf.json) when the system is in Spanish. -->
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>es</string>
+  </array>
 </dict>
 </plist>

@@ -1,17 +1,17 @@
 import Database from '@tauri-apps/plugin-sql'
 
-// Misma URL que src-tauri/src/lib.rs. El archivo vive en appConfigDir.
+// Same URL as src-tauri/src/lib.rs. The file lives in appConfigDir.
 export const DB_FILE = 'lucka.db'
 
-// Lo que usan los recursos. Permite tests sin Tauri.
+// What the resources use. Allows tests without Tauri.
 export interface Db {
   execute(sql: string, binds?: unknown[]): Promise<{ rowsAffected: number }>
   select<T>(sql: string, binds?: unknown[]): Promise<T>
 }
 
-// El plugin usa un pool: BEGIN/COMMIT pueden caer en conexiones distintas.
-// Por eso no hay transacciones (riesgo aceptado: app local, un solo usuario).
-// sqlx abre cada conexión con foreign_keys = ON.
+// The plugin uses a pool: BEGIN/COMMIT may land on different connections.
+// So there are no transactions (accepted risk: local app, single user).
+// sqlx opens every connection with foreign_keys = ON.
 let connection: Promise<Db> | null = null
 
 export function getDb(): Promise<Db> {
@@ -19,10 +19,10 @@ export function getDb(): Promise<Db> {
   return connection
 }
 
-// SQLite no tiene booleanos y el plugin manda `true` como texto.
+// SQLite has no booleans and the plugin sends `true` as text.
 export const bit = (value: boolean) => (value ? 1 : 0)
 
 export const now = () => new Date().toISOString()
 
-// `IN (?, ?, …)` con tantos marcadores como ids.
+// `IN (?, ?, …)` with as many placeholders as ids.
 export const marks = (ids: string[]) => ids.map(() => '?').join(', ')

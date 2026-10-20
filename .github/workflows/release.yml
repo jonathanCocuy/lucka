@@ -7,7 +7,7 @@ on:
 permissions:
   contents: write
 
-# Dos merges seguidos no publican en paralelo.
+# Two quick merges never publish in parallel.
 concurrency:
   group: release
   cancel-in-progress: false
@@ -27,19 +27,19 @@ jobs:
       - name: ⬇️ Checkout
         uses: actions/checkout@v4
 
-      - name: 🏷️ Leer versión
+      - name: 🏷️ Read version
         id: read
         run: |
           tag="v$(jq -r .version src-tauri/tauri.conf.json)"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "$tag ya existe. No se publica."
+            echo "$tag already exists. Nothing to publish."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-  # Borrador: `releases/latest` no lo ve hasta que estén todos los archivos.
+  # Draft: `releases/latest` doesn't see it until every file is uploaded.
   create:
     needs: version
     if: needs.version.outputs.exists == 'false'
@@ -48,7 +48,7 @@ jobs:
       id: ${{ steps.draft.outputs.id }}
 
     steps:
-      - name: 📝 Crear borrador
+      - name: 📝 Create draft
         id: draft
         env:
           GH_TOKEN: ${{ github.token }}
@@ -95,7 +95,7 @@ jobs:
         with:
           targets: ${{ matrix.rust-targets }}
 
-      - name: 💾 Cache de Rust
+      - name: 💾 Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
@@ -103,7 +103,7 @@ jobs:
       - name: 📦 Install
         run: pnpm install --frozen-lockfile
 
-      - name: 🏗️ Build y subir
+      - name: 🏗️ Build and upload
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -113,8 +113,8 @@ jobs:
           releaseId: ${{ needs.create.outputs.id }}
           args: ${{ matrix.args }}
 
-      # Nombre fijo: la landing enlaza a releases/latest/download/<nombre>.
-      - name: 🔗 Subir con nombre fijo
+      # Fixed name: the landing links to releases/latest/download/<name>.
+      - name: 🔗 Upload with a fixed name
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🚀 Publicar
+      - name: 🚀 Publish
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ needs.create.outputs.id }}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { usePreferences } from '@/lib/i18n/context'
 import { Icon } from './icon'
 import styles from './modal.module.css'
 
@@ -13,7 +14,7 @@ interface ModalProps {
   wide?: boolean
 }
 
-// <dialog> nativo: foco atrapado, Esc y fondo inerte sin librerías.
+// Native <dialog>: focus trap, Esc and an inert background with no library.
 export function Modal({
   open,
   onClose,
@@ -23,13 +24,14 @@ export function Modal({
   wide,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null)
+  const { t } = usePreferences()
 
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
     if (open && !dialog.open) {
       dialog.showModal()
-      // autoFocus de React corre antes de abrir el dialog: se pierde.
+      // React's autoFocus runs before the dialog opens, so it gets lost.
       dialog.querySelector<HTMLElement>('input, select, textarea')?.focus()
     }
     if (!open && dialog.open) dialog.close()
@@ -55,7 +57,7 @@ export function Modal({
               type="button"
               className={styles.close}
               onClick={onClose}
-              aria-label="Cerrar"
+              aria-label={t.common.close}
             >
               <Icon name="close" size={18} />
             </button>

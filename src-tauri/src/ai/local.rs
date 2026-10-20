@@ -11,10 +11,11 @@ use llama_cpp_2::sampling::LlamaSampler;
 use serde_json::Value;
 
 use super::prompt;
+use crate::error::{AppError, Code, Result};
 use crate::voice::Engines;
 
 const CONTEXT_TOKENS: u32 = 4096;
-// La respuesta es una lista corta de ítems.
+// The answer is a short list of items.
 const MAX_OUTPUT_TOKENS: i32 = 1024;
 
 pub struct LocalLlm {
@@ -22,32 +23,27 @@ pub struct LocalLlm {
     model: LlamaModel,
 }
 
-// llama.cpp solo se inicia una vez por proceso.
-static BACKEND: OnceLock<Result<LlamaBackend, String>> = OnceLock::new();
+// llama.cpp can only be initialized once per process.
+static BACKEND: OnceLock<Result<LlamaBackend>> = OnceLock::new();
 
-fn backend() -> Result<&'static LlamaBackend, String> {
+fn backend() -> Result<&'static LlamaBackend> {
     BACKEND
-        .get_or_init(|| {
-            LlamaBackend::init().map_err(|_| "No se pudo iniciar el modelo local".to_string())
-        })
+        .get_or_init(|| LlamaBackend::init().map_err(|_| Code::LocalModelFailed.into()))
         .as_ref()
-        .map_err(Clone::clone)
+        .map_err(|e| *e)
 }
 
-fn failed() -> String {
-    "El modelo local falló. Intenta de nuevo.".into()
+fn failed() -> AppError {
+    Code::LocalModelFailed.into()
 }
 
-pub fn interpret(engines: &Engines, path: PathBuf, ctx: &prompt::Context) -> Result<Value, String> {
+pub fn interpret(engines: &Engines, path: PathBuf, ctx: &prompt::Context) -> Result<Value> {
     let backend = backend()?;
-    let mut slot = engines
-        .llm
-        .lock()
-        .map_err(|_| "El modelo local está ocupado".to_string())?;
+    let mut slot = engines.llm.lock().map_err(|_| Code::LocalModelBusy)?;
     if slot.as_ref().is_none_or(|l| l.path != path) {
         *slot = None;
         let model = LlamaModel::load_from_file(backend, &path, &LlamaModelParams::default())
-            .map_err(|_| "No se pudo abrir el modelo local. Descárgalo de nuevo.".to_string())?;
+            .map_err(|_| Code::LocalModelBroken)?;
         *slot = Some(LocalLlm { path, model });
     }
     let Some(LocalLlm { model, .. }) = slot.as_ref() else {
@@ -56,14 +52,14 @@ pub fn interpret(engines: &Engines, path: PathBuf, ctx: &prompt::Context) -> Res
 
     let template = model.chat_template(None).map_err(|_| failed())?;
     let messages = [
-        LlamaChatMessage::new("system".into(), prompt::SYSTEM.into()).map_err(|_| failed())?,
+        LlamaChatMessage::new("system".into(), prompt::system(ctx)).map_err(|_| failed())?,
         LlamaChatMessage::new("user".into(), prompt::user_message(ctx)).map_err(|_| failed())?,
     ];
     let text = model
         .apply_chat_template(&template, &messages, true)
         .map_err(|_| failed())?;
 
-    // La gramática sale del mismo esquema que usan los proveedores en línea.
+    // The grammar comes from the same schema the online providers use.
     let grammar =
         llama_cpp_2::json_schema_to_grammar(&prompt::schema().to_string()).map_err(|_| failed())?;
     let mut sampler = LlamaSampler::chain_simple([
@@ -75,7 +71,7 @@ pub fn interpret(engines: &Engines, path: PathBuf, ctx: &prompt::Context) -> Res
     let mut context = model.new_context(backend, params).map_err(|_| failed())?;
     let tokens = model.vocab().tokenize(text.as_bytes(), false, true);
     if tokens.is_empty() || tokens.len() >= CONTEXT_TOKENS as usize - MAX_OUTPUT_TOKENS as usize {
-        return Err("Lo que dijiste es muy largo. Intenta con menos cosas a la vez.".into());
+        return Err(Code::TooLong.into());
     }
 
     let mut batch = LlamaBatch::new(tokens.len().max(512), 1);
@@ -88,7 +84,7 @@ pub fn interpret(engines: &Engines, path: PathBuf, ctx: &prompt::Context) -> Res
     let start = batch.n_tokens();
     let mut output = Vec::new();
     for position in start..start + MAX_OUTPUT_TOKENS {
-        // sample() ya acepta el token. Aceptarlo otra vez rompe la gramática.
+        // sample() already accepts the token. Accepting it again breaks the grammar.
         let token = sampler.sample(&context, batch.n_tokens() - 1);
         if model.vocab().is_eog(token) {
             break;

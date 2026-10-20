@@ -7,9 +7,12 @@ import {
   installAndRestart,
   type Update,
 } from '@/lib/api-client/updater'
+import { usePreferences } from '@/lib/i18n/context'
 import styles from './update-banner.module.css'
 
 export function UpdateBanner() {
+  const { t } = usePreferences()
+  const copy = t.update
   const [update, setUpdate] = useState<Update | null>(null)
   const [failed, setFailed] = useState(false)
   const [busy, startBusy] = useTransition()
@@ -33,13 +36,11 @@ export function UpdateBanner() {
   return (
     <aside className={styles.banner} role="status">
       <p className={styles.text}>
-        {failed
-          ? 'No se pudo actualizar. Intenta de nuevo.'
-          : `Hay una versión nueva (${update.version}).`}
+        {failed ? copy.failed : copy.available(update.version)}
       </p>
       <div className={styles.actions}>
         <Button type="button" disabled={busy} onClick={install}>
-          {busy ? 'Actualizando…' : 'Actualizar'}
+          {busy ? copy.updating : copy.update}
         </Button>
         <Button
           type="button"
@@ -47,7 +48,7 @@ export function UpdateBanner() {
           disabled={busy}
           onClick={() => setUpdate(null)}
         >
-          Ahora no
+          {t.common.notNow}
         </Button>
       </div>
     </aside>

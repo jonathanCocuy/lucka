@@ -23,7 +23,7 @@ export async function getInvestment(): Promise<Investment | null> {
   )
 }
 
-// Un solo fijo de inversión activo. Sin aporte, se archiva.
+// A single active investment fixed expense. With no contribution, it's archived.
 export async function saveInvestment(
   investment: Investment,
   fixed: FixedExpense | null,
@@ -35,7 +35,7 @@ export async function saveInvestment(
 
   if (investment.hasInvestments && fixed) {
     if (active && active.id !== fixed.id) {
-      throw new ApiClientError(409, 'Ya tienes otro fijo de inversión')
+      throw new ApiClientError(409, 'investmentExists')
     }
     await upsertFixed(db, { ...fixed, isInvestment: true })
   } else if (active) {

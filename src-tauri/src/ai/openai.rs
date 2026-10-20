@@ -1,10 +1,11 @@
 use serde_json::{Value, json};
 
 use super::{Online, check, prompt};
+use crate::error::{Code, Result};
 
 const BASE: &str = "https://api.openai.com/v1";
 
-pub async fn ping(http: &reqwest::Client, key: &str) -> Result<(), String> {
+pub async fn ping(http: &reqwest::Client, key: &str) -> Result<()> {
     let res = http
         .get(format!("{BASE}/models"))
         .bearer_auth(key)
@@ -19,11 +20,11 @@ pub async fn interpret(
     key: &str,
     model: &str,
     ctx: &prompt::Context,
-) -> Result<Value, String> {
+) -> Result<Value> {
     let body = json!({
         "model": model,
         "input": [
-            { "role": "system", "content": prompt::SYSTEM },
+            { "role": "system", "content": prompt::system(ctx) },
             { "role": "user", "content": prompt::user_message(ctx) },
         ],
         "text": {
@@ -51,6 +52,6 @@ pub async fn interpret(
         .flat_map(|o| o["content"].as_array().into_iter().flatten())
         .find(|c| c["type"] == "output_text")
         .and_then(|c| c["text"].as_str())
-        .ok_or_else(|| "OpenAI no devolvió una respuesta".to_string())?;
+        .ok_or(Online::OpenAi.error(Code::BadResponse))?;
     prompt::parse(text)
 }

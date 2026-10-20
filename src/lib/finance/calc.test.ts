@@ -1,7 +1,7 @@
 import { summarize } from './calc'
 import type { FinanceData, Income } from './types'
 
-// Pago el 15: el ciclo de hoy va del 15-sep al 15-oct (exclusivo).
+// Payday on the 15th: today's cycle runs Sep 15 to Oct 15 (exclusive).
 const TODAY = new Date(2026, 8, 20)
 
 function data(incomes: Omit<Income, 'id'>[]): FinanceData {
@@ -19,8 +19,8 @@ function data(incomes: Omit<Income, 'id'>[]): FinanceData {
   }
 }
 
-describe('summarize con ingresos extra', () => {
-  it('un ingreso dentro del ciclo sube el ingreso y el disponible', () => {
+describe('summarize with extra income', () => {
+  it('an income inside the cycle raises income and available', () => {
     const base = summarize(data([]), TODAY)
     const withExtra = summarize(
       data([{ amount: 400_000, description: 'Bono', date: '2026-09-18' }]),
@@ -31,7 +31,7 @@ describe('summarize con ingresos extra', () => {
     expect(withExtra.available).toBe(base.available + 400_000)
   })
 
-  it('un ingreso del ciclo pasado no suma', () => {
+  it('an income from the previous cycle does not count', () => {
     const summary = summarize(
       data([{ amount: 400_000, description: '', date: '2026-09-14' }]),
       TODAY,
@@ -41,7 +41,7 @@ describe('summarize con ingresos extra', () => {
     expect(summary.cycleIncomes).toHaveLength(0)
   })
 
-  it('un ingreso el día de pago cuenta en el ciclo nuevo, no en el viejo', () => {
+  it('an income on payday counts in the new cycle, not the old one', () => {
     const income = { amount: 400_000, description: '', date: '2026-09-15' }
 
     const newCycle = summarize(data([income]), TODAY)

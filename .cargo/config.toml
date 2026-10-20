@@ -1,4 +1,4 @@
 [env]
-# llama.cpp enlaza OpenSSL si lo encuentra (Homebrew en macOS). No lo usamos:
-# las descargas van por Rust. Con OpenSSL la .app depende de Homebrew y el build x86_64 falla.
+# llama.cpp links OpenSSL if it finds it (Homebrew on macOS). We don't need it:
+# downloads go through Rust. With OpenSSL the .app depends on Homebrew and the x86_64 build fails.
 CMAKE_DISABLE_FIND_PACKAGE_OpenSSL = "ON"

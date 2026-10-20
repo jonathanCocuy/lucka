@@ -43,8 +43,8 @@ export async function upsertFixed(db: Db, f: FixedExpense) {
   )
 }
 
-// Reemplaza la lista: upsert por id y archiva los que no vienen.
-// El fijo de inversión nunca se archiva ni se edita aquí, salvo su día.
+// Replaces the list: upsert by id and archive the missing ones.
+// The investment fixed expense is never archived or edited here, except its day.
 export async function replaceFixed(items: FixedExpense[]) {
   const db = await getDb()
   const active = await listActiveFixed()
@@ -52,7 +52,7 @@ export async function replaceFixed(items: FixedExpense[]) {
 
   const regular = items.filter(f => !f.isInvestment)
   if (regular.some(f => f.id === investmentId)) {
-    throw new ApiClientError(422, 'La inversión se edita desde inversiones')
+    throw new ApiClientError(422, 'investmentElsewhere')
   }
   const keep = new Set(regular.map(f => f.id))
   const missing = active
@@ -71,7 +71,7 @@ export async function replaceFixed(items: FixedExpense[]) {
   }
 }
 
-// Desmarcar pagado = borrar sus pagos entre `from` (incluido) y `to`.
+// Unmark paid = delete its payments from `from` (inclusive) to `to`.
 export async function clearPayments(fixedId: string, from: string, to: string) {
   const db = await getDb()
   const found = await db.select<{ id: string }[]>(
@@ -79,7 +79,7 @@ export async function clearPayments(fixedId: string, from: string, to: string) {
     [fixedId],
   )
   if (found.length === 0) {
-    throw new ApiClientError(404, 'Gasto fijo no encontrado')
+    throw new ApiClientError(404, 'fixedNotFound')
   }
   await db.execute(
     `DELETE FROM expenses WHERE fixed_expense_id = ? AND spent_on >= ? AND spent_on < ?`,

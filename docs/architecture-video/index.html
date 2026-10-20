@@ -1,8 +1,8 @@
 <!doctype html>
 <!--
-  Video de arquitectura del README. render(t) es puro para que cada cuadro sea exacto.
-  Re-grabar: abrir con ?record en Chrome headless a 1920×1080, llamar render(i / 30)
-  por cuadro, capturar y unir con ffmpeg (30 fps, H.264, yuv420p).
+  The README's architecture video. render(t) is pure, so every frame is exact.
+  Re-record: open with ?record in headless Chrome at 1920×1080, call render(i / 30)
+  per frame, capture, and join with ffmpeg (30 fps, H.264, yuv420p).
 -->
 <html lang="en">
   <head>
@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <style>
-      /* Tokens copiados de src/app/globals.css. Único bloque con colores literales. */
+      /* Tokens copied from src/app/globals.css. The only block with literal colors. */
       :root {
         --color-bg: #f4f3fb;
         --color-surface: #ffffff;
@@ -79,7 +79,7 @@
         font-variant-ligatures: none;
       }
 
-      /* ---------- Marco fijo ---------- */
+      /* ---------- Fixed frame ---------- */
 
       .topbar {
         position: absolute;
@@ -144,7 +144,7 @@
         background: var(--color-primary);
       }
 
-      /* ---------- Escenas ---------- */
+      /* ---------- Scenes ---------- */
 
       .scene {
         position: absolute;
@@ -250,7 +250,7 @@
         width: 640px;
       }
 
-      /* ---------- Piezas de diagrama ---------- */
+      /* ---------- Diagram pieces ---------- */
 
       .group {
         position: absolute;
@@ -550,7 +550,7 @@
         fill: var(--color-positive);
       }
 
-      /* ---------- Escena: intro ---------- */
+      /* ---------- Scene: intro ---------- */
 
       .intro {
         position: absolute;
@@ -606,7 +606,7 @@
         color: var(--color-primary);
       }
 
-      /* ---------- Escena: Rust (muro CSP) ---------- */
+      /* ---------- Scene: Rust (CSP wall) ---------- */
 
       .wall {
         position: absolute;
@@ -657,7 +657,7 @@
         color: var(--color-danger);
       }
 
-      /* ---------- Escena: clic optimista ---------- */
+      /* ---------- Scene: optimistic click ---------- */
 
       .app-card {
         position: absolute;
@@ -723,7 +723,7 @@
         color: var(--color-danger);
       }
 
-      /* ---------- Escena: voz ---------- */
+      /* ---------- Scene: voice ---------- */
 
       .said {
         font-size: 23px;
@@ -732,7 +732,7 @@
         line-height: 1.3;
       }
 
-      /* ---------- Escena: skills ---------- */
+      /* ---------- Scene: skills ---------- */
 
       .outro-title {
         position: absolute;
@@ -2449,7 +2449,7 @@
         return fill
       })
 
-      // Todo sale de t: grabar, pausar o saltar da el mismo cuadro.
+      // Everything comes from t: recording, pausing or seeking give the same frame.
       function render(t) {
         scenes.forEach((s, i) => {
           fills[i].style.width =

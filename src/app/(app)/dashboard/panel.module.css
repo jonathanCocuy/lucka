@@ -1,4 +1,4 @@
-/* Contenido compartido de los widgets: resumen + lista. */
+/* Shared widget content: summary + list. */
 .summary {
   display: flex;
   align-items: baseline;

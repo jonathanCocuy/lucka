@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import type { FinanceData } from '@/lib/finance/types'
+import { usePreferences } from '@/lib/i18n/context'
 import { CategoryEditor } from '../editors/category-editor'
 import { FixedEditor } from '../editors/fixed-editor'
 import { InvestmentEditor } from '../editors/investment-editor'
@@ -13,12 +14,6 @@ import styles from './forms.module.css'
 
 export type EditKind = 'fixed' | 'categories' | 'profile'
 
-const TITLES: Record<EditKind, string> = {
-  fixed: 'Gastos fijos',
-  categories: 'Categorías y presupuestos',
-  profile: 'Ingreso e inversiones',
-}
-
 interface EditModalProps {
   edit: EditKind | null
   onClose: () => void
@@ -26,7 +21,8 @@ interface EditModalProps {
 
 export function EditModal({ edit, onClose }: EditModalProps) {
   const { data } = useFinance()
-  const title = TITLES[edit ?? 'fixed']
+  const { t } = usePreferences()
+  const title = t.editModal[edit ?? 'fixed']
   return (
     <Modal open={edit !== null} onClose={onClose} title={title} wide>
       {edit && data && <EditForm edit={edit} data={data} onClose={onClose} />}
@@ -34,7 +30,7 @@ export function EditModal({ edit, onClose }: EditModalProps) {
   )
 }
 
-// Borrador local: nada cambia en el panel hasta "Guardar".
+// Local draft: nothing changes on the dashboard until "Save".
 function EditForm({
   edit,
   data,
@@ -45,6 +41,7 @@ function EditForm({
   onClose: () => void
 }) {
   const { setFixed, setCategories, setProfile, setInvestment } = useFinance()
+  const { t } = usePreferences()
   const [fixed, setFixedDraft] = useState(data.fixed)
   const [categories, setCategoriesDraft] = useState(data.categories)
   const [profile, setProfileDraft] = useState(data.profile)
@@ -99,7 +96,7 @@ function EditForm({
             (profile.monthlyIncome <= 0 || !profile.name.trim()))
         }
       >
-        {saving ? 'Guardando…' : 'Guardar'}
+        {saving ? t.common.saving : t.common.save}
       </Button>
     </form>
   )

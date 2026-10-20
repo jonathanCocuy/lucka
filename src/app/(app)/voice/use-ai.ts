@@ -9,7 +9,7 @@ export interface AiConfig {
   models: LocalModel[]
   defaultProvider: AiProvider | null
   whisper: LocalModel | null
-  // Hay todo para hablar: Whisper + una IA por defecto lista para usar.
+  // Everything is ready to talk: Whisper + a default AI ready to use.
   ready: boolean
 }
 
@@ -35,7 +35,7 @@ export function useAi() {
   const refresh = useCallback(
     () =>
       loadConfig().then(setConfig, error =>
-        console.error('No se pudo leer la IA', error),
+        console.error('Could not read the AI setup', error),
       ),
     [],
   )
@@ -46,7 +46,7 @@ export function useAi() {
       next => {
         if (!cancelled) setConfig(next)
       },
-      error => console.error('No se pudo leer la IA', error),
+      error => console.error('Could not read the AI setup', error),
     )
     return () => {
       cancelled = true
@@ -54,11 +54,4 @@ export function useAi() {
   }, [])
 
   return { config, refresh }
-}
-
-export function formatSize(bytes: number) {
-  const gb = bytes / 1_000_000_000
-  return gb >= 1
-    ? `${gb.toLocaleString('es-CO', { maximumFractionDigits: 1 })} GB`
-    : `${Math.round(bytes / 1_000_000)} MB`
 }

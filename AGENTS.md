@@ -10,173 +10,187 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # AGENTS.md
 
-Reglas para cualquier agente (Claude, Cursor, etc.) en este repo.
-Leer completo antes de planear o escribir código.
+Rules for any agent (Claude, Cursor, etc.) working in this repo.
+Read all of it before planning or writing code.
 
 ---
 
-## 1. Cómo escribir (lo más importante)
+## 1. How to write (the most important part)
 
-Quien lee este repo se cansa con párrafos largos. Todo texto debe ser corto.
-Aplica a: planes, respuestas, `.md`, comentarios, commits y PRs.
+People reading this repo get tired of long paragraphs. Keep every text short.
+Applies to: plans, replies, `.md` files, comments, commits and PRs.
 
-- Frases cortas. Una idea por línea.
-- Viñetas en vez de párrafos. Máximo 3 líneas seguidas de prosa.
-- Palabras simples. Nada de jerga si hay una palabra común.
-- Solo lo que importa para decidir o actuar. Si se puede borrar sin perder nada, se borra.
-- No repetir lo que ya dijo el usuario ni lo que muestra el código.
-- Comentarios en código: solo el **por qué**, nunca el qué. Una línea si se puede.
+- Short sentences. One idea per line.
+- Bullets instead of paragraphs. At most 3 lines of prose in a row.
+- Plain words. No jargon when a common word exists.
+- Only what matters to decide or act. If it can be deleted without losing anything, delete it.
+- Don't repeat what the user said or what the code shows.
+- Code comments: only the **why**, never the what. One line if possible.
+- The repo is in English: code, comments, tests, docs, commits and PRs.
 
-Ejemplos: `docs/writing-style.md`.
+Examples: `docs/writing-style.md`.
 
 ---
 
-## 2. Planes
+## 2. Plans
 
-Todo plan sigue este formato. Nada más.
+Every plan follows this format. Nothing else.
 
 ```markdown
-## Qué voy a hacer
+## What I'll do
 
-- 1-3 viñetas
+- 1-3 bullets
 
-## Por qué
+## Why
 
-- 1-2 viñetas
+- 1-2 bullets
 
-## Cómo va a funcionar
+## How it will work
 
-1. Paso del flujo
-2. Paso del flujo
+1. Flow step
+2. Flow step
 
-## Archivos
+## Files
 
-- `ruta/archivo.ts` → qué cambia
+- `path/file.ts` → what changes
 
-## Preguntas
+## Questions
 
-(las que falten, con opciones)
+(the open ones, with options)
 
 ## Tests
 
-(casos elegidos por el usuario)
+(cases the user picked)
 ```
 
-Reglas:
+Rules:
 
-- **Siempre preguntar antes de decidir** en temas de:
-  - Arquitectura (dónde vive la lógica, tabla nueva vs columna, SQL en `local-db` vs comando Rust).
-  - Negocio (quién puede hacer qué, qué pasa en el caso raro, qué ve el usuario si falla).
-- Cada pregunta trae 2-4 opciones con una línea de pro/contra. Marcar la recomendada.
-- Usar la herramienta de preguntas (AskUserQuestion) cuando exista.
-- Si el código responde la pregunta, leer el código en vez de preguntar.
-- El desarrollador debe terminar el plan sabiendo **qué** se hace y **por qué**.
-
----
-
-## 3. Tests unitarios
-
-- Solo **jest**. Archivo junto al código: `mi-archivo.test.ts`.
-- **Antes de escribir tests, preguntar** qué casos probar:
-  - Proponer edge cases reales como opciones (multi-select).
-  - El usuario elige. Solo se escriben los elegidos.
-- No escribir tests para:
-  - Casos que no pueden pasar (tipos ya lo impiden, input ya validado antes).
-  - Código sin lógica (componentes que solo pintan, wrappers, constantes).
-  - Librerías externas (Tauri, Next).
-- Un test = un comportamiento. Nombre en español que diga qué se espera.
-  - ✅ `lanza 404 si el gasto no existe` · ❌ `test removeExpense case 2`
-- Sin lógica dentro del test (sin `if`, sin loops).
-- Mocks solo en el borde: `getDb`, `invoke` de Tauri.
-- Bug arreglado → un test que falle sin el fix.
-
-Agente: `test-planner`. Correr: `pnpm test`.
+- **Always ask before deciding** on:
+  - Architecture (where logic lives, new table vs column, SQL in `local-db` vs a Rust command).
+  - Business (who can do what, what happens in the edge case, what the user sees on failure).
+- Every question comes with 2-4 options and a one-line pro/con for each. Mark the recommended one.
+- Use the question tool (AskUserQuestion) when it exists.
+- If the code answers the question, read the code instead of asking.
+- The developer must finish the plan knowing **what** gets done and **why**.
 
 ---
 
-## 4. Stack y estructura
+## 3. Unit tests
 
-- App de escritorio local-first: **Tauri v2** (macOS + Windows).
-- UI: Next.js 16 como sitio estático (`output: 'export'` → `out/`), React 19, TypeScript estricto, **pnpm**.
-- Datos: SQLite local vía `tauri-plugin-sql`. Sin servidor, sin login, sin nube.
-- Estructura:
-  - `src/app/` → rutas. Componentes de un solo uso viven junto a su ruta.
-  - `src/components/ui/` → componentes reusados en toda la app.
-  - `src/lib/local-db/` → un archivo por recurso. **Único lugar con SQL.**
-  - `src/lib/api-client/` → lo que llama el front. Reglas de negocio + errores (`ApiClientError`).
-  - `src/lib/finance/` → tipos, validación y cálculos puros.
-  - `src-tauri/` → shell Rust, plugins, permisos (`capabilities/`) y migraciones.
-- Archivos en **kebab-case** (`mi-componente.tsx`). Lint lo bloquea.
-- Sin barrels (`index.ts` que solo re-exporta).
+- **jest** only. The file lives next to the code: `my-file.test.ts`.
+- **Before writing tests, ask** which cases to test:
+  - Propose real edge cases as options (multi-select).
+  - The user picks. Only the picked ones get written.
+- Don't write tests for:
+  - Cases that can't happen (the types already prevent them, the input was validated earlier).
+  - Code without logic (components that only render, wrappers, constants).
+  - External libraries (Tauri, Next).
+- One test = one behavior. The name says what's expected.
+  - ✅ `throws 404 when the expense does not exist` · ❌ `test removeExpense case 2`
+- No logic inside tests (no `if`, no loops).
+- Mocks only at the edge: `getDb`, Tauri's `invoke`.
+- Fixed a bug → add a test that fails without the fix.
+
+Agent: `test-planner`. Run: `pnpm test`.
 
 ---
 
-## 5. Datos y permisos
+## 4. Stack and structure
 
-- Sin auth ni roles: un usuario por computador.
-- Datos en claro en el archivo SQLite del usuario. Nunca salen del equipo.
-  - Excepción: voz con key en línea. El texto dicho va al proveedor elegido.
-  - Keys solo en el llavero del sistema. Nunca en SQLite, logs ni respaldos.
-- Nada de servidor: sin `cookies()`, `headers()`, route handlers ni server actions. Rompen el export.
-- Cada API de Tauri nueva necesita su permiso en `src-tauri/capabilities/default.json`. Pedir lo mínimo.
-- CSP estricta en `tauri.conf.json`. No abrir dominios externos.
+- Local-first desktop app: **Tauri v2** (macOS + Windows).
+- UI: Next.js 16 as a static site (`output: 'export'` → `out/`), React 19, strict TypeScript, **pnpm**.
+- Data: local SQLite through `tauri-plugin-sql`. No server, no login, no cloud.
+- Structure:
+  - `src/app/` → routes. Single-use components live next to their route.
+  - `src/components/ui/` → components reused across the app.
+  - `src/lib/local-db/` → one file per resource. **The only place with SQL.**
+  - `src/lib/api-client/` → what the front calls. Business rules + errors (`ApiClientError`).
+  - `src/lib/finance/` → types, validation and pure calculations.
+  - `src/lib/i18n/` → every text in the app: `en.ts` (source) and `es.ts`.
+  - `src-tauri/` → Rust shell, plugins, permissions (`capabilities/`) and migrations.
+- Files in **kebab-case** (`my-component.tsx`). Lint blocks anything else.
+- No barrels (an `index.ts` that only re-exports).
 
-Detalle: `docs/architecture.md` (Data layer, AI and voice).
+---
+
+## 5. Data and permissions
+
+- No auth or roles: one user per computer.
+- Data is stored in plain text in the user's SQLite file. It never leaves the machine.
+  - Exception: voice with an online key. The spoken text goes to the chosen provider.
+  - Keys live only in the OS keychain. Never in SQLite, logs or backups.
+- No server at all: no `cookies()`, `headers()`, route handlers or server actions. They break the export.
+- Every new Tauri API needs its permission in `src-tauri/capabilities/default.json`. Ask for the minimum.
+- Strict CSP in `tauri.conf.json`. Don't open external domains.
+
+Details: `docs/architecture.md` (Data layer, AI and voice).
 
 ---
 
 ## 6. CSS
 
-- **Prohibido Tailwind.** CSS Modules (`archivo.module.css`) + variables.
-- Colores, espacios y fuentes salen de `src/app/globals.css` con `var(--token)`.
-- Colores literales (`#fff`, `rgb()`) solo en `globals.css`. Lint y hooks lo bloquean.
-- Si falta un token, preguntar cuál agregar. No inventarlo.
+- **No Tailwind.** CSS Modules (`file.module.css`) + variables.
+- Colors, spacing and fonts come from `src/app/globals.css` through `var(--token)`.
+- Literal colors (`#fff`, `rgb()`) only in `globals.css`. Lint and hooks block them anywhere else.
+- If a token is missing, ask which one to add. Don't invent it.
 
 ---
 
-## 7. Base de datos
+## 7. Copy and money
 
-- Cambio de esquema = archivo nuevo en `src-tauri/migrations/` (`0002_nombre.sql`) + registrarlo en `src-tauri/src/lib.rs` con la versión siguiente.
-- Nunca editar una migración ya mergeada. Ya corrió en equipos de usuarios.
-- Si cambia la forma de los datos, revisar export/import (`src/lib/local-db/backup.ts`) y subir `BACKUP_VERSION` si hace falta.
-- Probar con `pnpm desktop`: base nueva y base existente.
-
----
-
-## 8. Git
-
-- Ramas protegidas: `main`, `staging`, `feedback`. **Nunca push directo.** Rama + PR.
-- **Nunca** saltarse hooks: nada de `--no-verify`, `-n`, `HUSKY=0`.
-- Si un hook falla, se arregla el error. No se rodea.
+- Every text the user sees lives in `src/lib/i18n/en.ts` and `es.ts`. Never in a component.
+  - Write the English one first. TypeScript flags a key missing in `es.ts`.
+  - Errors travel as codes (`ErrorCode`), in TS and Rust. Only the UI turns them into text.
+- Money is integer **cents**, for every currency. Format it with `money()` from `usePreferences()`.
+  - Never divide by 100 or format amounts by hand in a component.
 
 ---
 
-## 9. Prohibido
+## 8. Database
 
-- Tailwind o cualquier librería de utilidades CSS.
-- `any`. Usar el tipo real o `unknown` + validación.
+- Schema change = a new file in `src-tauri/migrations/` (`0004_name.sql`) + register it in `src-tauri/src/lib.rs` with the next version.
+- Never edit a merged migration, not even a comment.
+  - It already ran on users' machines.
+  - sqlx checks each migration's checksum: a changed file stops existing databases from opening.
+- If the data shape changes, review export/import (`src/lib/local-db/backup.ts`) and bump `BACKUP_VERSION` if needed.
+- Test with `pnpm desktop`: a new database and an existing one.
+
+---
+
+## 9. Git
+
+- Protected branches: `main`, `staging`, `feedback`. **Never push directly.** Branch + PR.
+- **Never** skip hooks: no `--no-verify`, `-n`, `HUSKY=0`.
+- If a hook fails, fix the error. Don't work around it.
+
+---
+
+## 10. Banned
+
+- Tailwind or any CSS utility library.
+- `any`. Use the real type or `unknown` + validation.
 - `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`.
-- npm, yarn, bun, npx. Solo pnpm (`pnpm dlx` en vez de `npx`).
-- Editar `.env*` o lockfiles a mano.
-- Agregar librerías sin preguntar.
-- Features, abstracciones o manejo de errores que nadie pidió.
+- npm, yarn, bun, npx. Only pnpm (`pnpm dlx` instead of `npx`).
+- Editing `.env*` or lockfiles by hand.
+- Adding libraries without asking.
+- Features, abstractions or error handling nobody asked for.
 
-Los hooks de `.claude/hooks/` bloquean casi todo esto. Si un hook bloquea: **no intentar rodearlo**. Arreglar o preguntar.
+The hooks in `.claude/hooks/` block almost all of this. If a hook blocks you: **don't try to work around it**. Fix the problem or ask.
 
 ---
 
-## 10. Tarea terminada
+## 11. Definition of done
 
-Una tarea NO está lista si falla algo de esto:
+A task is NOT done if any of this fails:
 
 ```bash
-pnpm check   # lint + prettier + tipos + tests + build + cargo check
+pnpm check   # lint + prettier + types + tests + build + cargo check
 ```
 
-Al terminar, responder con este formato (corto):
+When you finish, reply in this format (short):
 
 ```markdown
-**Qué cambió:** 1-2 líneas para producto.
-**Detalle técnico:** 2-4 viñetas.
-**Cómo probar:** pasos: qué correr, qué abrir, qué se debe ver.
+**What changed:** 1-2 lines for product.
+**Technical details:** 2-4 bullets.
+**How to test:** steps: what to run, what to open, what you should see.
 ```

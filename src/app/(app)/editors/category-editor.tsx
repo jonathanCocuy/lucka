@@ -4,21 +4,9 @@ import field from '@/components/ui/field.module.css'
 import { Icon } from '@/components/ui/icon'
 import { MoneyInput } from '@/components/ui/money-input'
 import type { Category } from '@/lib/finance/types'
+import { usePreferences } from '@/lib/i18n/context'
 import { newId } from '../finance-provider'
 import styles from './editor.module.css'
-
-const SUGGESTIONS = [
-  'Mercado',
-  'Novia',
-  'Salidas',
-  'Transporte',
-  'Ropa',
-  'Antojos',
-  'Salud',
-  'Regalos',
-  'Suscripciones',
-  'Mascotas',
-]
 
 interface CategoryEditorProps {
   items: Category[]
@@ -26,6 +14,8 @@ interface CategoryEditorProps {
 }
 
 export function CategoryEditor({ items, onChange }: CategoryEditorProps) {
+  const { t } = usePreferences()
+  const copy = t.categoryEditor
   const patch = (id: string, change: Partial<Category>) =>
     onChange(items.map(c => (c.id === id ? { ...c, ...change } : c)))
   const used = new Set(items.map(c => c.name.trim().toLowerCase()))
@@ -35,20 +25,22 @@ export function CategoryEditor({ items, onChange }: CategoryEditorProps) {
   return (
     <div className={styles.editor}>
       <div className={styles.chips}>
-        {SUGGESTIONS.filter(s => !used.has(s.toLowerCase())).map(s => (
-          <button
-            key={s}
-            type="button"
-            className={styles.chip}
-            onClick={() => add(s)}
-          >
-            + {s}
-          </button>
-        ))}
+        {copy.suggestions
+          .filter(s => !used.has(s.toLowerCase()))
+          .map(s => (
+            <button
+              key={s}
+              type="button"
+              className={styles.chip}
+              onClick={() => add(s)}
+            >
+              + {s}
+            </button>
+          ))}
       </div>
       <div className={`${styles.row} ${styles.head} ${styles.categoryRow}`}>
-        <span>Categoría</span>
-        <span>Presupuesto mensual</span>
+        <span>{copy.category}</span>
+        <span>{copy.budget}</span>
         <span />
       </div>
       <div className={styles.list}>
@@ -56,7 +48,7 @@ export function CategoryEditor({ items, onChange }: CategoryEditorProps) {
           <div key={c.id} className={`${styles.row} ${styles.categoryRow}`}>
             <input
               className={field.input}
-              placeholder="Ej. Novia"
+              placeholder={copy.placeholder}
               value={c.name}
               onChange={e => patch(c.id, { name: e.target.value })}
             />
@@ -67,7 +59,7 @@ export function CategoryEditor({ items, onChange }: CategoryEditorProps) {
             <button
               type="button"
               className={styles.remove}
-              aria-label={`Quitar ${c.name}`}
+              aria-label={t.common.removeItem(c.name)}
               onClick={() => onChange(items.filter(x => x.id !== c.id))}
             >
               <Icon name="close" size={16} />
@@ -76,7 +68,7 @@ export function CategoryEditor({ items, onChange }: CategoryEditorProps) {
         ))}
       </div>
       <button type="button" className={styles.add} onClick={() => add()}>
-        <Icon name="plus" size={16} /> Otra categoría
+        <Icon name="plus" size={16} /> {copy.add}
       </button>
     </div>
   )

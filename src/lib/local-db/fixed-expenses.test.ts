@@ -7,14 +7,14 @@ jest.mock('@tauri-apps/plugin-sql', () => ({
 }))
 
 describe('clearPayments', () => {
-  it('responde 404 y no borra pagos si el fijo no existe', async () => {
+  it('throws 404 and deletes no payments when the fixed expense does not exist', async () => {
     mockDb.select.mockResolvedValueOnce([])
 
     await expect(
-      clearPayments('no-existe', '2026-10-15', '2026-11-15'),
+      clearPayments('missing', '2026-10-15', '2026-11-15'),
     ).rejects.toMatchObject({
       status: 404,
-      message: 'Gasto fijo no encontrado',
+      code: 'fixedNotFound',
     })
     expect(mockDb.execute).not.toHaveBeenCalled()
   })

@@ -1,21 +1,21 @@
 ---
 name: Bug
-about: Algo no funciona
+about: Something doesn't work
 labels: bug
 ---
 
-## Qué pasó
+## What happened
 
-<!-- 1-2 líneas. -->
+<!-- 1-2 lines. -->
 
-## Cómo reproducirlo
+## How to reproduce it
 
 1.
 2.
 
-## Qué esperabas
+## What you expected
 
-## Equipo
+## Machine
 
-- Sistema: macOS / Windows (versión)
-- Versión de Lucka: (Ajustes)
+- OS: macOS / Windows (version)
+- Lucka version: (Settings)

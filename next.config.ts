@@ -1,10 +1,10 @@
 import type { NextConfig } from 'next'
 
-// Export estático: Tauri sirve `out/` como archivos, sin servidor.
+// Static export: Tauri serves `out/` as plain files, no server.
 const nextConfig: NextConfig = {
   output: 'export',
   images: { unoptimized: true },
-  // `/settings/index.html`: el webview resuelve carpetas, no rutas sin extensión.
+  // `/settings/index.html`: the webview resolves folders, not extensionless paths.
   trailingSlash: true,
 }
 

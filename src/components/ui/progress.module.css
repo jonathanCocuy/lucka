@@ -6,7 +6,7 @@
   border-radius: var(--radius-full);
 }
 
-/* Entra creciendo desde la izquierda; luego sigue el valor con transición. */
+/* Grows in from the left, then follows the value with a transition. */
 .fill {
   display: block;
   height: 100%;

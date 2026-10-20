@@ -7,13 +7,35 @@
   letter-spacing: var(--tracking-tight);
 }
 
+/* Same drawing as src-tauri/icons/source.svg, painted with the app tokens. */
 .mark {
-  display: grid;
-  place-items: center;
+  display: block;
+  flex: none;
   width: 36px;
   height: 36px;
-  font-size: var(--text-md);
-  color: var(--color-text-inverse);
-  background: var(--color-primary);
-  border-radius: var(--radius-sm);
+}
+
+.tile {
+  fill: var(--color-primary);
+}
+
+.back {
+  fill: var(--color-mint);
+}
+
+.backRim {
+  fill: none;
+  stroke: var(--color-positive);
+  stroke-opacity: 0.35;
+}
+
+.front {
+  fill: var(--color-surface);
+  stroke: var(--color-primary);
+}
+
+.frontRim {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-opacity: 0.22;
 }

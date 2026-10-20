@@ -28,7 +28,7 @@ import {
   saveSettings,
 } from '@/lib/local-db/settings'
 
-// Varios registros de una vez (voz). `categories` = lista completa si hay nuevas.
+// Several records at once (voice). `categories` = the full list if there are new ones.
 export interface Batch {
   categories: Category[] | null
   previousCategories: Category[]
@@ -36,10 +36,10 @@ export interface Batch {
   incomes: Income[]
 }
 
-// Lo que el usuario tiene guardado.
+// What the user has saved.
 export interface FinanceSnapshot {
   onboarded: boolean
-  profile: FinanceProfile | null // null = onboarding sin empezar
+  profile: FinanceProfile | null // null = onboarding not started
   investment: Investment
   fixed: FixedExpense[]
   categories: Category[]
@@ -55,7 +55,7 @@ const NO_INVESTMENT: Investment = {
   totalBalance: 0,
 }
 
-// Única puerta del front a los datos. Hoy: SQLite local (src/lib/local-db).
+// The front's only door to the data. Today: local SQLite (src/lib/local-db).
 export function createFinanceApi() {
   return {
     async load(): Promise<FinanceSnapshot> {
@@ -81,18 +81,18 @@ export function createFinanceApi() {
 
     saveProfile: saveSettings,
     completeOnboarding,
-    // `fixed` = el fijo de inversión ya sincronizado (o null si no hay aporte).
+    // `fixed` = the investment fixed expense, already synced (or null with no contribution).
     saveInvestment,
     saveFixed: replaceFixed,
     saveCategories: replaceCategories,
     addExpense,
     removeExpense,
-    // Desmarcar un fijo pagado: borra sus pagos entre `from` (incluido) y `to`.
+    // Unmarking a paid fixed expense: deletes its payments from `from` (inclusive) to `to`.
     clearPayments,
     addIncome,
     removeIncome,
 
-    // Todo o nada: si algo falla, se borra lo que alcanzó a entrar.
+    // All or nothing: if something fails, whatever got in is deleted.
     async addMany(batch: Batch) {
       const added = { expenses: [] as string[], incomes: [] as string[] }
       try {
@@ -106,7 +106,7 @@ export function createFinanceApi() {
           added.incomes.push(income.id)
         }
       } catch (error) {
-        // Sin transacciones (ver db.ts): se deshace a mano.
+        // No transactions (see db.ts): undone by hand.
         await Promise.allSettled([
           ...added.expenses.map(id => removeExpense(id)),
           ...added.incomes.map(id => removeIncome(id)),

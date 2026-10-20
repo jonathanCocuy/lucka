@@ -6,14 +6,15 @@ import type {
   Income,
   Investment,
 } from './types'
+import { INVESTMENT_NAME } from './validate'
 
 export interface Cycle {
   start: Date
-  end: Date // exclusivo: día del próximo pago
+  end: Date // exclusive: next payday
 }
 
-// `month` puede salirse de 0-11: Date lo normaliza al año que toca.
-// Si el pago es el 31 y el mes tiene 30 días, se paga el último día.
+// `month` may fall outside 0-11: Date rolls it into the right year.
+// If payday is the 31st and the month has 30 days, it falls on the last day.
 function paydayIn(year: number, month: number, payday: number) {
   const first = new Date(year, month, 1)
   const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
@@ -133,7 +134,7 @@ export function summarize(data: FinanceData, today: Date): Summary {
     fixed,
     categories,
     overBudget: categories
-      // Sin presupuesto definido no hay nada que "pasar".
+      // With no budget set, there's nothing to "go over".
       .filter(c => c.over > 0 && c.category.budget > 0)
       .sort((a, b) => b.over - a.over),
     cycleExpenses,
@@ -144,14 +145,14 @@ export function summarize(data: FinanceData, today: Date): Summary {
   }
 }
 
-// Lo que queda del ingreso tras fijos y presupuestos. Se muestra en el onboarding.
+// What's left of income after fixed expenses and budgets. Shown in the onboarding.
 export function unassigned(data: Omit<FinanceData, 'expenses' | 'incomes'>) {
   const fixed = data.fixed.reduce((sum, f) => sum + f.amount, 0)
   const budgets = data.categories.reduce((sum, c) => sum + c.budget, 0)
   return data.profile.monthlyIncome - fixed - budgets
 }
 
-// El aporte mensual a inversiones vive como un gasto fijo más.
+// The monthly investment contribution lives as one more fixed expense.
 export function syncInvestmentFixed(
   fixed: FixedExpense[],
   investment: Investment,
@@ -165,7 +166,7 @@ export function syncInvestmentFixed(
     ...rest,
     {
       id: current?.id ?? crypto.randomUUID(),
-      name: 'Inversión',
+      name: INVESTMENT_NAME,
       amount: investment.monthlyContribution,
       dueDay: current?.dueDay ?? 1,
       isInvestment: true,

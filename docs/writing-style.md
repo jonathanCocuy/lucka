@@ -1,37 +1,37 @@
-# Cómo escribir
+# How to write
 
-Regla: si se puede borrar sin perder nada, se borra.
-Aplica a planes, `.md`, comentarios, commits y PRs.
+Rule: if it can be deleted without losing anything, delete it.
+Applies to plans, `.md` files, comments, commits and PRs.
 
-## Planes
+## Plans
 
-❌ Largo:
+❌ Long:
 
-> Para implementar esta funcionalidad, primero vamos a analizar la estructura actual del módulo de autenticación, considerando las distintas alternativas disponibles en el ecosistema de Next.js, y posteriormente procederemos a crear un nuevo componente que se encargará de gestionar...
+> To implement this feature, we will first analyze the current structure of the authentication module, considering the different alternatives available in the Next.js ecosystem, and then we will proceed to create a new component that will be in charge of managing...
 
-✅ Corto:
+✅ Short:
 
-> **Qué:** botón de logout en el header.
-> **Por qué:** hoy solo se puede salir desde /dashboard.
-> **Cómo:** reusa la action `logout` de `(auth)/actions.ts`.
+> **What:** logout button in the header.
+> **Why:** today you can only log out from /dashboard.
+> **How:** reuses the `logout` action in `(auth)/actions.ts`.
 
-## Comentarios en código
+## Code comments
 
-❌ `// Esta función obtiene el rol del usuario desde la base de datos usando el id`
-✅ `// Se consulta en cada request para que un cambio de rol aplique al instante.`
+❌ `// This function gets the user's role from the database using the id`
+✅ `// Queried on every request so a role change applies instantly.`
 
-El qué lo dice el código. El comentario dice el por qué. Si no hay por qué, no hay comentario.
+The code says what. The comment says why. No why, no comment.
 
-## Preguntas
+## Questions
 
-❌ "¿Cómo quieres manejar los permisos?"
-✅ "¿Quién puede borrar un proyecto?
+❌ "How do you want to handle permissions?"
+✅ "Who can delete a project?
 
-1. Solo admin (recomendado): simple, cero riesgo.
-2. Admin + dueño: más flexible, requiere columna `owner_id`."
+1. Admin only (recommended): simple, zero risk.
+2. Admin + owner: more flexible, needs an `owner_id` column."
 
 ## Commits
 
-- `feat: logout en header`
-- `fix: loop de redirect con token vencido`
-- Minúsculas, presente, máximo ~60 caracteres.
+- `feat: logout in the header`
+- `fix: redirect loop with an expired token`
+- English, lowercase, present tense, at most ~60 characters.

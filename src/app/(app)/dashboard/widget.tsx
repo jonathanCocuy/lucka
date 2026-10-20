@@ -3,14 +3,8 @@
 import { useRef, type DragEvent, type ReactNode } from 'react'
 import { Icon } from '@/components/ui/icon'
 import type { WidgetSize } from '@/lib/dashboard/layout'
+import { usePreferences } from '@/lib/i18n/context'
 import styles from './widget.module.css'
-
-const SIZE_LABELS: Record<WidgetSize, string> = {
-  third: '1/3',
-  half: '1/2',
-  'two-thirds': '2/3',
-  full: 'completo',
-}
 
 export interface WidgetEdit {
   dragging: boolean
@@ -23,7 +17,7 @@ export interface WidgetEdit {
   onDragOver: (e: DragEvent) => void
   onDrop: () => void
   onDragEnd: () => void
-  // `width` = px desde el borde izquierdo del widget hasta el puntero.
+  // `width` = px from the widget's left edge to the pointer.
   onResize: (width: number) => void
   onResizeStart: () => void
   onResizeEnd: () => void
@@ -39,9 +33,11 @@ interface WidgetProps {
 }
 
 export function Widget({ title, action, size, edit, children }: WidgetProps) {
-  // Sincrónico: el estado llega tarde y el drag de mover arrancaría igual.
+  const { t } = usePreferences()
+  const copy = t.widget
+  // Synchronous: state arrives too late and the move drag would start anyway.
   const resizing = useRef(false)
-  // Borde izquierdo al empezar: si el widget salta de fila, el ancho no oscila.
+  // Left edge at the start: if the widget jumps rows, the width doesn't flicker.
   const startLeft = useRef(0)
 
   return (
@@ -61,7 +57,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
             return
           }
           e.dataTransfer.effectAllowed = 'move'
-          // WebKit no arranca el arrastre si no hay datos.
+          // WebKit won't start a drag without data.
           e.dataTransfer.setData('text/plain', title)
           edit.onDragStart()
         })
@@ -85,11 +81,11 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
         <h2 className={styles.title}>{title}</h2>
         {edit ? (
           <div className={styles.tools}>
-            {/* Respaldo de teclado para el arrastre. */}
+            {/* Keyboard fallback for dragging. */}
             <button
               type="button"
               className={styles.tool}
-              aria-label={`Mover ${title} antes`}
+              aria-label={copy.moveBack(title)}
               disabled={!edit.onBack}
               onClick={edit.onBack}
             >
@@ -98,7 +94,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
             <button
               type="button"
               className={styles.tool}
-              aria-label={`Mover ${title} después`}
+              aria-label={copy.moveForward(title)}
               disabled={!edit.onForward}
               onClick={edit.onForward}
             >
@@ -107,8 +103,8 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
             <button
               type="button"
               className={styles.tool}
-              aria-label={`Tamaño de ${title}: ${SIZE_LABELS[size]}. Cambiar`}
-              title={SIZE_LABELS[size]}
+              aria-label={copy.size(title, copy.sizes[size])}
+              title={copy.sizes[size]}
               onClick={edit.onCycleSize}
             >
               <Icon name="resize" size={16} />
@@ -116,7 +112,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
             <button
               type="button"
               className={`${styles.tool} ${styles.hide}`}
-              aria-label={`Ocultar ${title}`}
+              aria-label={copy.hide(title)}
               onClick={edit.onHide}
             >
               <Icon name="minus" size={16} />
@@ -130,7 +126,7 @@ export function Widget({ title, action, size, edit, children }: WidgetProps) {
         {children}
       </div>
       {edit && (
-        // Con mouse. El teclado usa el botón de tamaño.
+        // Mouse only. The keyboard uses the size button.
         <span
           className={styles.resize}
           aria-hidden

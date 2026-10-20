@@ -1,4 +1,4 @@
-/* Estilo compartido para inputs de texto, select y fecha. */
+/* Shared style for text, select and date inputs. */
 .field {
   display: flex;
   flex-direction: column;

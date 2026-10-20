@@ -10,7 +10,7 @@
   gap: var(--space-2);
 }
 
-/* Aviso de privacidad: lo que el usuario debe leer antes de pegar su key. */
+/* Privacy notice: what the user must read before pasting a key. */
 .note {
   display: flex;
   flex-direction: column;
@@ -41,7 +41,7 @@
   color: var(--color-text-muted);
 }
 
-/* Botón flotante */
+/* Floating button */
 .dock {
   position: fixed;
   right: var(--space-8);
@@ -134,7 +134,7 @@
   text-decoration: none;
 }
 
-/* Resumen */
+/* Summary */
 .heard {
   margin: 0;
   padding: var(--space-3) var(--space-4);
@@ -249,7 +249,7 @@
   gap: var(--space-3);
 }
 
-/* Ajustes */
+/* Settings */
 .providers {
   display: flex;
   flex-direction: column;

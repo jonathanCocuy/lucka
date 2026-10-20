@@ -9,9 +9,9 @@ import {
   stopRecording,
   wasPrompted,
 } from '@/lib/api-client/ai'
-import { errorMessage } from '@/lib/api-client/http'
 import { resolve, type Draft } from '@/lib/ai/resolve'
 import { toISODate } from '@/lib/finance/calc'
+import { usePreferences } from '@/lib/i18n/context'
 import { useFinance } from '../finance-provider'
 import { AiSetupModal, type SetupStep } from './ai-setup-modal'
 import { useAi } from './use-ai'
@@ -20,16 +20,11 @@ import styles from './voice.module.css'
 
 type State = 'idle' | 'recording' | 'transcribing' | 'thinking'
 
-const LABELS: Record<State, string> = {
-  idle: 'Registrar hablando',
-  recording: 'Parar y procesar',
-  transcribing: 'Escuchando lo que dijiste…',
-  thinking: 'Entendiendo…',
-}
-
 export function VoiceButton() {
   const { data, summary } = useFinance()
   const { config, refresh } = useAi()
+  const { t, prefs, fixedName, error: errorFor } = usePreferences()
+  const labels = t.voice.states
   const [state, setState] = useState<State>('idle')
   const [error, setError] = useState<string | null>(null)
   const [setup, setSetup] = useState<SetupStep | null>(null)
@@ -37,7 +32,7 @@ export function VoiceButton() {
     null,
   )
 
-  // Una sola vez: a quien nunca se le preguntó, se le ofrece la IA.
+  // Only once: anyone never asked gets offered the AI.
   useEffect(() => {
     let cancelled = false
     wasPrompted().then(
@@ -57,21 +52,23 @@ export function VoiceButton() {
     const provider = config.defaultProvider
     if (!provider) return
     setState('transcribing')
-    const heard = await stopRecording()
+    const heard = await stopRecording(prefs.language)
     setState('thinking')
     const today = toISODate(new Date())
     const raw = await interpret(provider, {
+      ...prefs,
       text: heard,
       today,
       categories: data.categories.map(c => c.name),
-      fixed: summary.fixed.filter(f => !f.isPaid).map(f => f.fixed.name),
+      fixed: summary.fixed.filter(f => !f.isPaid).map(f => fixedName(f.fixed)),
     })
     const draft = resolve(raw, {
       today,
+      currency: prefs.currency,
       categories: data.categories,
       fixed: summary.fixed.map(f => ({
         id: f.fixed.id,
-        name: f.fixed.name,
+        name: fixedName(f.fixed),
         pending: f.pending,
         isPaid: f.isPaid,
       })),
@@ -93,7 +90,7 @@ export function VoiceButton() {
         await process()
       }
     } catch (err) {
-      setError(errorMessage(err))
+      setError(errorFor(err))
     } finally {
       setState(s => (s === 'recording' ? s : 'idle'))
     }
@@ -110,16 +107,16 @@ export function VoiceButton() {
             data-tone={error ? 'error' : undefined}
             role={error ? 'alert' : 'status'}
           >
-            {error ?? LABELS[state]}
-            {error && <Link href="/settings">Revisar en Ajustes</Link>}
+            {error ?? labels[state]}
+            {error && <Link href="/settings">{t.voice.checkSettings}</Link>}
           </div>
         )}
         <button
           type="button"
           className={styles.fab}
           data-state={state}
-          aria-label={LABELS[state]}
-          title={LABELS[state]}
+          aria-label={labels[state]}
+          title={labels[state]}
           disabled={busy}
           onClick={click}
         >

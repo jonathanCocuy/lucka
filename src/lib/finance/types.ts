@@ -1,8 +1,8 @@
 export interface FinanceProfile {
-  // Sin cuenta: el nombre solo sirve para saludar.
+  // No account: the name is only used for greetings.
   name: string
   monthlyIncome: number
-  // Día del mes en que llega el pago. El ciclo va de pago a pago.
+  // Day of the month the paycheck arrives. The cycle runs payday to payday.
   payday: number
 }
 
@@ -32,7 +32,7 @@ export interface Expense {
   target: ExpenseTarget
 }
 
-// Plata extra fuera del sueldo. Solo suma en el ciclo de su fecha.
+// Extra money outside the salary. Counts only in the cycle of its date.
 export interface Income {
   id: string
   amount: number

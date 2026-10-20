@@ -1,0 +1,2 @@
+/* The mic permission prompt, for macOS in Spanish. */
+"NSMicrophoneUsageDescription" = "Lucka usa el micrófono para que registres tus gastos hablando. El audio se procesa en este equipo.";

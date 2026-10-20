@@ -2,7 +2,7 @@
 
 ## Key rules
 
-Full list in [`AGENTS.md`](AGENTS.md) (Spanish). The ones people forget:
+Full list in [`AGENTS.md`](AGENTS.md). The ones people forget:
 
 - Short text. Code comments explain **why**, never what.
 - **pnpm** only (`pnpm dlx`, never `npx`).
