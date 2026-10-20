@@ -2,7 +2,7 @@
 
 How Lucka works, layer by layer, and why it was built this way.
 
-Short version: [the 100-second video](architecture-video/lucka-architecture.mp4). Source: `docs/architecture-video/index.html`.
+Short version: [the two-minute video](architecture-video/lucka-architecture.mp4). Source: `docs/architecture-video/index.html`.
 
 - [1. Overview](#1-overview)
 - [2. Repo map](#2-repo-map)
