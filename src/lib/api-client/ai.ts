@@ -78,10 +78,13 @@ export async function downloadModel(
 export const deleteModel = (id: string) => call('model_delete', { id })
 
 export const startRecording = () => call('voice_start')
+export const cancelRecording = () => call('voice_cancel')
+export const getAudioLevel = () => call<number>('voice_level')
 // Whisper listens in the app's language.
 export const stopRecording = (language: Language) =>
   call<string>('voice_stop', { language })
 export const checkMic = () => call('voice_check_mic')
+export const openMicSettings = () => call('voice_open_mic_settings')
 
 export const listProviders = listAiProviders
 export const setDefaultProvider = setDefaultAiProvider

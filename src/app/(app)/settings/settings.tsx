@@ -11,6 +11,8 @@ import {
   importFromFile,
   wipeWithConfirm,
 } from '@/lib/api-client/backup'
+import { checkMic, openMicSettings } from '@/lib/api-client/ai'
+import { ApiClientError } from '@/lib/api-client/http'
 import { recordsExist } from '@/lib/api-client/preferences'
 import { usePreferences } from '@/lib/i18n/context'
 import { PreferencesEditor } from '../editors/preferences-editor'
@@ -25,7 +27,10 @@ export function Settings() {
   const [info, setInfo] = useState<{ version: string; dbPath: string }>()
   const [locked, setLocked] = useState(false)
   const [message, setMessage] = useState<Message>(null)
+  const [privacyMessage, setPrivacyMessage] = useState<Message>(null)
+  const [privacyMicDenied, setPrivacyMicDenied] = useState(false)
   const [busy, startBusy] = useTransition()
+  const [checkingMic, startCheckingMic] = useTransition()
 
   useEffect(() => {
     appInfo().then(setInfo, () => null)
@@ -71,6 +76,60 @@ export function Settings() {
           className={`${reveal.reveal} ${styles.section}`}
           style={stagger(3)}
         >
+          <h2>{copy.privacy}</h2>
+          <p className={styles.hint}>{copy.privacyHint}</p>
+          <div className={styles.actions}>
+            <Button type="button" onClick={() => void openMicSettings()}>
+              {copy.openMicSettings}
+            </Button>
+            <Button
+              type="button"
+              variant="soft"
+              disabled={checkingMic}
+              onClick={() =>
+                startCheckingMic(async () => {
+                  setPrivacyMessage(null)
+                  setPrivacyMicDenied(false)
+                  try {
+                    await checkMic()
+                    setPrivacyMessage({ kind: 'notice', text: copy.micGranted })
+                  } catch (err) {
+                    setPrivacyMicDenied(
+                      err instanceof ApiClientError && err.code === 'micDenied',
+                    )
+                    setPrivacyMessage({ kind: 'error', text: errorFor(err) })
+                  }
+                })
+              }
+            >
+              {copy.checkMic}
+            </Button>
+          </div>
+          {privacyMessage && (
+            <p
+              className={
+                privacyMessage.kind === 'error' ? styles.error : styles.notice
+              }
+              role={privacyMessage.kind === 'error' ? 'alert' : 'status'}
+            >
+              {privacyMessage.text}
+              {privacyMicDenied && (
+                <button
+                  type="button"
+                  className={styles.inlineLink}
+                  onClick={() => void openMicSettings()}
+                >
+                  {copy.openMicSettings}
+                </button>
+              )}
+            </p>
+          )}
+        </section>
+
+        <section
+          className={`${reveal.reveal} ${styles.section}`}
+          style={stagger(5)}
+        >
           <h2>{copy.backup}</h2>
           <p className={styles.hint}>{copy.backupHint}</p>
           <div className={styles.actions}>
@@ -114,7 +173,7 @@ export function Settings() {
 
         <section
           className={`${reveal.reveal} ${styles.section}`}
-          style={stagger(4)}
+          style={stagger(6)}
         >
           <h2>{copy.wipe}</h2>
           <p className={styles.hint}>{copy.wipeHint}</p>
@@ -146,7 +205,7 @@ export function Settings() {
         {info && (
           <section
             className={`${reveal.reveal} ${styles.section}`}
-            style={stagger(5)}
+            style={stagger(7)}
           >
             <h2>{copy.about}</h2>
             <dl className={styles.facts}>

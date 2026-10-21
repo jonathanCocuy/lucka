@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -17,9 +18,19 @@ struct Active {
     thread: JoinHandle<Result<Vec<f32>>>,
 }
 
-#[derive(Default)]
 pub struct Recorder {
     active: Mutex<Option<Active>>,
+    // RMS of the last audio chunk, as f32 bits. 0 when idle.
+    level: Arc<AtomicU32>,
+}
+
+impl Default for Recorder {
+    fn default() -> Self {
+        Self {
+            active: Mutex::new(None),
+            level: Arc::new(AtomicU32::new(0)),
+        }
+    }
 }
 
 impl Recorder {
@@ -30,8 +41,9 @@ impl Recorder {
         }
         let (stop, stop_rx) = mpsc::channel();
         let (ready, ready_rx) = mpsc::channel();
+        let level = Arc::clone(&self.level);
         // cpal's stream isn't Send on every platform: it lives on its own thread.
-        let thread = std::thread::spawn(move || capture(stop_rx, ready));
+        let thread = std::thread::spawn(move || capture(stop_rx, ready, level));
         ready_rx.recv().map_err(|_| no_mic())?.inspect_err(|_| {
             let _ = stop.send(());
         })?;
@@ -49,11 +61,17 @@ impl Recorder {
             .ok_or(Code::NotRecording)?;
         let _ = active.stop.send(());
         let samples = active.thread.join().map_err(|_| no_mic())??;
+        self.level.store(0f32.to_bits(), Ordering::Relaxed);
         // Without permission, macOS delivers silence instead of an error.
         if samples.iter().all(|s| *s == 0.0) {
             return Err(Code::MicDenied.into());
         }
         Ok(samples)
+    }
+
+    // RMS of the most recent audio chunk. 0.0 when idle.
+    pub fn level(&self) -> f32 {
+        f32::from_bits(self.level.load(Ordering::Relaxed))
     }
 }
 
@@ -65,7 +83,11 @@ fn no_mic() -> AppError {
     Code::MicMissing.into()
 }
 
-fn capture(stop: mpsc::Receiver<()>, ready: mpsc::Sender<Result<()>>) -> Result<Vec<f32>> {
+fn capture(
+    stop: mpsc::Receiver<()>,
+    ready: mpsc::Sender<Result<()>>,
+    level: Arc<AtomicU32>,
+) -> Result<Vec<f32>> {
     let device = match cpal::default_host().default_input_device() {
         Some(d) => d,
         None => {
@@ -84,7 +106,7 @@ fn capture(stop: mpsc::Receiver<()>, ready: mpsc::Sender<Result<()>>) -> Result<
     let rate = config.sample_rate();
     let buffer = Arc::new(Mutex::new(Vec::<f32>::new()));
 
-    let stream = build(&device, config, channels, Arc::clone(&buffer));
+    let stream = build(&device, config, channels, Arc::clone(&buffer), level);
     let stream = match stream.and_then(|s| s.play().map(|_| s).map_err(|_| no_mic())) {
         Ok(s) => s,
         Err(e) => {
@@ -106,16 +128,22 @@ fn build(
     config: cpal::SupportedStreamConfig,
     channels: usize,
     buffer: Arc<Mutex<Vec<f32>>>,
+    level: Arc<AtomicU32>,
 ) -> Result<cpal::Stream> {
     let on_error = |e| eprintln!("microphone: {e}");
     let push = move |frames: &mut dyn Iterator<Item = f32>| {
         if let Ok(mut b) = buffer.lock() {
             let samples: Vec<f32> = frames.collect();
-            b.extend(
-                samples
-                    .chunks(channels)
-                    .map(|c| c.iter().sum::<f32>() / c.len() as f32),
-            );
+            let mono: Vec<f32> = samples
+                .chunks(channels)
+                .map(|c| c.iter().sum::<f32>() / c.len() as f32)
+                .collect();
+            // RMS of this chunk → live level for the UI.
+            if !mono.is_empty() {
+                let rms = (mono.iter().map(|s| s * s).sum::<f32>() / mono.len() as f32).sqrt();
+                level.store(rms.to_bits(), Ordering::Relaxed);
+            }
+            b.extend(mono);
         }
     };
     let format = config.sample_format();

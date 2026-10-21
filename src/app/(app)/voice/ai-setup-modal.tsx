@@ -11,8 +11,10 @@ import {
   checkMic,
   downloadModel,
   markPrompted,
+  openMicSettings,
   type LocalModel,
 } from '@/lib/api-client/ai'
+import { ApiClientError } from '@/lib/api-client/http'
 import {
   ONLINE_IDS,
   ONLINE_PROVIDERS,
@@ -367,15 +369,18 @@ function MicStep({ onDone }: { onDone: () => void }) {
   const { t, error: errorFor } = usePreferences()
   const copy = t.aiSetup
   const [error, setError] = useState<string | null>(null)
+  const [micDenied, setMicDenied] = useState(false)
   const [busy, startBusy] = useTransition()
   const test = () =>
     startBusy(async () => {
       setError(null)
+      setMicDenied(false)
       try {
         await checkMic()
         onDone()
       } catch (err) {
         setError(errorFor(err))
+        setMicDenied(err instanceof ApiClientError && err.code === 'micDenied')
       }
     })
   return (
@@ -385,6 +390,11 @@ function MicStep({ onDone }: { onDone: () => void }) {
         <p className={forms.error} role="alert">
           {error}
         </p>
+      )}
+      {micDenied && (
+        <Button type="button" block onClick={() => void openMicSettings()}>
+          {t.voice.openMicSettings}
+        </Button>
       )}
       <Button type="button" block disabled={busy} onClick={test}>
         {busy ? copy.listening : copy.allow}

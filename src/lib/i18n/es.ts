@@ -273,6 +273,11 @@ export const es: Messages = {
     about: 'Sobre Lucka',
     version: 'Versión',
     dataFile: 'Archivo de datos',
+    privacy: 'Privacidad y permisos',
+    privacyHint: 'Lucka necesita acceso al micrófono para el registro por voz.',
+    openMicSettings: 'Abrir configuración de micrófono',
+    checkMic: 'Verificar acceso al micrófono',
+    micGranted: 'Acceso al micrófono concedido.',
   },
 
   backup: {
@@ -362,6 +367,8 @@ export const es: Messages = {
       thinking: 'Entendiendo…',
     },
     checkSettings: 'Revisar en Ajustes',
+    openMicSettings: 'Abrir configuración de micrófono',
+    silenceHint: 'No se escucha nada. Intenta hablar más fuerte.',
   },
 
   summary: {
@@ -465,8 +472,7 @@ export const es: Messages = {
     whisperBusy: 'Whisper está ocupado',
     alreadyRecording: 'Ya estás grabando',
     notRecording: 'No estabas grabando',
-    micDenied:
-      'Lucka no tiene permiso para usar el micrófono. Actívalo en Ajustes del sistema → Privacidad → Micrófono.',
+    micDenied: 'Lucka no tiene permiso para usar el micrófono.',
     micBusy: 'El micrófono está ocupado. Intenta de nuevo.',
     micMissing: 'No se encontró un micrófono',
     micUnsupported: 'Formato de micrófono no soportado',

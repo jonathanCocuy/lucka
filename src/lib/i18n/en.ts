@@ -280,6 +280,11 @@ export const en = {
     about: 'About Lucka',
     version: 'Version',
     dataFile: 'Data file',
+    privacy: 'Privacy and permissions',
+    privacyHint: 'Lucka needs microphone access for voice entry.',
+    openMicSettings: 'Open Microphone Settings',
+    checkMic: 'Check microphone access',
+    micGranted: 'Microphone access granted.',
   },
 
   backup: {
@@ -371,6 +376,8 @@ export const en = {
       thinking: 'Understanding…',
     },
     checkSettings: 'Check Settings',
+    openMicSettings: 'Open Microphone Settings',
+    silenceHint: 'Not hearing anything. Try speaking louder.',
   },
 
   summary: {
@@ -482,8 +489,7 @@ export const en = {
     whisperBusy: 'Whisper is busy',
     alreadyRecording: "You're already recording",
     notRecording: "You weren't recording",
-    micDenied:
-      "Lucka doesn't have permission to use the microphone. Turn it on in System Settings → Privacy → Microphone.",
+    micDenied: "Lucka doesn't have permission to use the microphone.",
     micBusy: 'The microphone is busy. Try again.',
     micMissing: 'No microphone found',
     micUnsupported: 'Unsupported microphone format',

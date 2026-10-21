@@ -81,12 +81,38 @@ pub async fn voice_stop(
     .map_err(|_| Code::TranscriptionFailed)?
 }
 
+// Stops recording and discards the audio — used when navigating away.
+#[tauri::command]
+pub fn voice_cancel(recorder: tauri::State<'_, Recorder>) {
+    let _ = recorder.stop();
+}
+
+// RMS of the last captured audio chunk (0.0–1.0). Used for the live level indicator.
+#[tauri::command]
+pub fn voice_level(recorder: tauri::State<'_, Recorder>) -> f32 {
+    recorder.level()
+}
+
 // Records a moment so the OS asks for permission, and checks there is sound.
 #[tauri::command]
 pub async fn voice_check_mic(recorder: tauri::State<'_, Recorder>) -> Result<()> {
     recorder.start()?;
     tokio::time::sleep(std::time::Duration::from_millis(700)).await;
     recorder.stop().map(|_| ())
+}
+
+// Opens the OS microphone permission settings so the user can grant access.
+#[tauri::command]
+pub fn voice_open_mic_settings() {
+    #[cfg(target_os = "windows")]
+    let _ = std::process::Command::new("cmd")
+        .args(["/c", "start", "ms-settings:privacy-microphone"])
+        .spawn();
+
+    #[cfg(target_os = "macos")]
+    let _ = std::process::Command::new("open")
+        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
+        .spawn();
 }
 
 fn transcribe(
